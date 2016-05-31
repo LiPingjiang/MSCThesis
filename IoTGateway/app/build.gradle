@@ -1,0 +1,63 @@
+    apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        applicationId "com.mscthesis.pli.iotgateway"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+
+        // Enabling multidex support.
+        //multiDexEnabled true
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'notice.html'
+        exclude 'META-INF/ECLIPSE_.RSA'
+        exclude 'META-INF/ECLIPSE_.SF'
+        exclude 'edl-v10.html'
+        exclude 'epl-v10.html'
+        exclude 'META-INF/services/org.openrdf.rio.RDFWriterFactory'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/maven/org.slf4j/slf4j-api/pom.properties'
+        exclude 'META-INF/maven/org.slf4j/slf4j-api/pom.xml'
+//        exclude 'META-INF/services/org.openrdf.rio.RDFParserFactory'
+//        exclude 'META-INF/services/org.openrdf.repository.config.RepositoryFactory'
+
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    dexOptions {
+        preDexLibraries = false
+    }
+
+
+}
+
+    dependencies {
+        compile fileTree(include: ['*.jar'], dir: 'libs')
+        testCompile 'junit:junit:4.12'
+        compile 'com.android.support:appcompat-v7:23.4.0'
+        // http://mvnrepository.com/artifact/org.eclipse.californium/californium-core
+        compile 'org.eclipse.californium:californium-core:1.0.4'
+        // http://mvnrepository.com/artifact/org.eclipse.californium/scandium
+        compile 'org.eclipse.californium:scandium:1.0.0-M2'
+        compile files('src/main/libs/jena-android-core-2.13.0.jar')
+        compile files('src/main/libs/xerces-android-2.11.0.jar')
+        //compile files('src/main/libs/slf4j-api-1.7.21.jar')
+        // http://mvnrepository.com/artifact/org.apache.jena/jena-iri
+        compile 'org.apache.jena:jena-iri:0.9.3'
+        compile files('src/main/libs/org.eclipse.paho.client.mqttv3-1.0.2.jar')
+    }
