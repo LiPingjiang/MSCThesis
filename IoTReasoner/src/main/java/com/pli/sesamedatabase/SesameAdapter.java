@@ -1,0 +1,100 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package com.pli.sesamedatabase;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.repository.Repository;
+import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.http.HTTPRepository;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParseException;
+
+/**
+ *
+ * @author pli
+ */
+public class SesameAdapter {
+    
+    
+    String repositoryID = "iot";
+    //private String sesameServerAddress = "http://cse-cn0004.oulu.fi:10010/";
+    private String sesameServerAddress = "http://localhost:10010/openrdf-sesame";
+    //The repository's address is http://localhost:10010/repositories/iot 
+    
+    private static String obsURI = "http://localhost/SensorSchema/ontology#";
+    RDFFormat dataFormat = RDFFormat.RDFXML;
+    
+    RepositoryConnection connection = null;
+    
+    
+    /*
+    * Initialize the adapter with a specific rdf format
+    */
+    public SesameAdapter(RDFFormat sformat){
+        this.dataFormat = sformat;
+    }
+    
+    /*
+    * Connect to the remote server via HTTP
+    */
+    public RepositoryConnection createConnection(){
+
+        if(connection == null){
+            Repository repository = new HTTPRepository(sesameServerAddress, repositoryID);
+            try {
+                repository.initialize();
+                connection = repository.getConnection();
+            } catch (RepositoryException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
+
+        return connection;
+
+
+    }
+    
+    public void addStatements(RepositoryConnection connection, StringWriter writer){
+        //long time = (new Date()).getTime();
+        try {
+            //System.out.println("------------------ ADDING STATEMENTS -------------------- ");
+            //connection.begin();
+
+            // Add the first file
+            ValueFactory factory =  connection.getRepository().getValueFactory();
+
+            StringReader reader = new StringReader(writer.toString());
+
+            connection.add(reader, obsURI, dataFormat);
+
+            connection.commit();
+
+        } catch (RepositoryException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+
+        } catch (RDFParseException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } 
+        finally {
+            //long c = ((new Date()).getTime())-time;
+            // Whatever happens, we want to close the connection when we are done.
+            try {
+                connection.close();
+                //LOGGER.info("sa " + (new Date()).getTime());
+            } catch (RepositoryException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
+
+    }
+    
+}
