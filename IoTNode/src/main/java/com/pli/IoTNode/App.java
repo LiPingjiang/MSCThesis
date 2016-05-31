@@ -14,6 +14,8 @@ import java.util.Scanner;
 import org.eclipse.californium.core.CoapHandler;
 import org.eclipse.californium.core.CoapResponse;
 
+import com.pli.IoTNode.App.CoapHandlerTimer;
+
 /**
  * Hello world!
  *
@@ -22,7 +24,7 @@ public class App
 {
 	static int incidentStartNumber = 15000;
 	static int NumberOfThreads = 1;		//how many threads(IoTNodes)
-	static int DataSize = 50; 	//how many data send in total
+	static int DataSize = 1; 	//how many data send in total
 	static int DataPackageSize = 50; 	//how many data send together
 	static String prefix ;
 	static String suffix ;
@@ -45,8 +47,10 @@ public class App
 	
 	//ps: by doing this, the size is fix
 	static List<String> IoTReasonerAddress = Arrays.asList(
-			"10.20.218.148", 
-			"10.20.210.145");
+			"192.168.0.107"
+			//"10.20.218.148", 
+			//"10.20.210.145"
+			);
     public static void main( String[] args )
     {
 
@@ -137,6 +141,7 @@ public class App
 				try {
 
 					while(dataProcessed < App.DataSize){
+						rdfData = "";
 						for (int j = 1; j <= DataPackageSize && (dataProcessed < App.DataSize) ; j++) {
 							dataProcessed++;
 							
@@ -144,13 +149,15 @@ public class App
 
 							inputStream 	= new FileInputStream( prefix+clientId+ "\\incident_"+ dataProcessed + suffix);
 							String result	= getStringFromInputStream(inputStream);
-							result			= result.substring(127,result.length()-10); //remove "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">" and "</rdf:RDF>"
+							//result			= result.substring(127,result.length()-10); //remove "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">" and "</rdf:RDF>"
+							result			= result.substring(125,result.length()-10);
 							rdfData 		+= result;
 
 
 						}
 						rdfData = "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">"+rdfData+"</rdf:RDF>";
 						rdfList.add(rdfData);
+						//System.out.println(rdfData);
 					}
 
 				} catch (FileNotFoundException e) {
@@ -171,6 +178,7 @@ public class App
 						IoTMqttClient Mclient = new IoTMqttClient( httpURI,"IoTReasoning" , clientId+"");
 						for(String rdf : rdfList){
 							Mclient.publish(rdf);
+//							System.out.println(rdf);
 						}
 						//Mclient.close();
 						
@@ -183,11 +191,12 @@ public class App
 						//CoapClient_pub.put(coapHandler,"coap://192.168.43.162:5683/IoTReasoner/"+clientId ,rdfData);
 						//CoapClient_pub.put(coapHandler,gatewayURI+clientId ,rdfData);
 						String address =IoTReasonerAddress.get(clientId%IoTReasonerAddress.size());
-						
-						IoTCoapClient coapClient = new IoTCoapClient("coap://"+address+":5683/IoTReasoner/"+clientId);
+						System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId);
+						IoTCoapClient coapClient = new IoTCoapClient("coap://"+address+":5683/IoTReasoner/"+clientId, new CoapHandlerTimer());
 						for(String rdf : rdfList){
-							System.out.println("coapClient.put( rdf)");
-							coapClient.put( rdf);
+//							System.out.println(rdf);
+							coapClient.put(rdf);
+							
 						}
 						coapClient.close();
 						
@@ -273,6 +282,7 @@ public class App
     	
     	public CoapHandlerTimer( ){
     		startTime= new Date();;
+    		//System.out.println("create handler.");
     	}
 
     	@Override public void onLoad(CoapResponse response) {

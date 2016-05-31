@@ -1,6 +1,7 @@
 package com.pli.IoTNode;
 
 import java.util.Date;
+import java.util.logging.Handler;
 
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapHandler;
@@ -14,10 +15,11 @@ public class IoTCoapClient {
 	String uri;
 	Date startTime;
 	CoapClient client = new CoapClient(uri);
+	CoapHandler handler;
 	
-	
-	IoTCoapClient(String uri){
+	IoTCoapClient(String uri, CoapHandler handler){
 		
+		this.handler = handler;
 		client = new CoapClient(uri);
 	}
 	
@@ -26,7 +28,7 @@ public class IoTCoapClient {
 		//uri="coap://coap.me:5683/";
 		uri="coap://10.20.220.188:5683/IoTResource";
 		CoapClient client = new CoapClient(uri);
-		client.setTimeout(0);
+		//client.setTimeout(0);
 		//client.useEarlyNegotiation(82);
 		client.useLateNegotiation();
 
@@ -74,7 +76,7 @@ public class IoTCoapClient {
 //		}
 		
 		//asynchronous
-		client.put(new CoapHandlerTimer(),data, MediaTypeRegistry.APPLICATION_RDF_XML);
+		client.put( handler,data, MediaTypeRegistry.APPLICATION_RDF_XML);
 		
 		//System.out.println("send!");
 	}
