@@ -4,6 +4,7 @@ package com.mscthesis.pli.iotgateway;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
@@ -14,17 +15,24 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 import org.eclipse.californium.core.CoapServer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Date;
 import java.util.Enumeration;
 
@@ -37,40 +45,59 @@ public class MainActivity extends AppCompatActivity {
     public TextView informationView;
     public TextView statusView;
     public TextView resultView;
+    public TextView tv_reasoningTime;
+    public TextView tv_transmissionTime;
     public Button resetButton;
     BroadcastReceiver receiver;
     private CoapServer server;
     public static MainActivity instance;
-    int requestNumber=0;
-    boolean isExisting=false; //is another service exist, if exist , do not start new one as they listen to the same port
-    static String httpURI ="tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
+    int requestNumber = 0;
+    boolean isExisting = false; //is another service exist, if exist , do not start new one as they listen to the same port
+    static String httpURI = "tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
     static Handler handler = new Handler();
     static String resultModel;
+
+    //socket
+    private ServerSocket serverSocket;
+    Thread serverThread = null;
+    public static final int SERVERPORT = 6000;
+    Handler updateConversationHandler;
+
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         reasonTime = 0;
-        transmissionTime =0;
+        transmissionTime = 0;
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        isExisting =false;
+        isExisting = false;
         instance = this;
         requestNumber = 0;
 
         informationView = (TextView) findViewById(R.id.Infomation);
         statusView = (TextView) findViewById(R.id.tv_status);
         resultView = (TextView) findViewById(R.id.Result);
+        tv_reasoningTime = (TextView) findViewById(R.id.tv_reasoningTime);
+        tv_transmissionTime = (TextView) findViewById(R.id.tv_transmissionTime);
+
         resultView.setMovementMethod(new ScrollingMovementMethod());
         resetButton = (Button) findViewById(R.id.bt_reset);
         resetButton.setOnClickListener(
                 new View.OnClickListener() {
                     public void onClick(View v) {
-                        reasonTime=0;
-                        requestNumber=0;
-                        transmissionTime =0;
+                        reasonTime = 0;
+                        requestNumber = 0;
+                        transmissionTime = 0;
                         resultView.setText("Waiting for new reasoning tasks.");
                     }
                 }
@@ -78,22 +105,47 @@ public class MainActivity extends AppCompatActivity {
 
         informationView.setText("IP Address: " + getLocalIpAddress());
 
+        //socket
+        updateConversationHandler = new Handler();
+        this.serverThread = new Thread(new ServerThread());
+        this.serverThread.start();
 
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
+
     @Override
     protected void onStart() {
         super.onStart();
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
         LocalBroadcastManager.getInstance(this).registerReceiver((receiver),
                 new IntentFilter(IoTResource.BROADCAST_RECEIVE)
         );
 
         initServer();
-        if(!isExisting)
-        {
+        if (!isExisting) {
             server.start();
             isExisting = true;
         }
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://com.mscthesis.pli.iotgateway/http/host/path")
+        );
+        AppIndex.AppIndexApi.start(client, viewAction);
     }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -111,40 +163,66 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static void reasonTimeIncrease( long time){
-        reasonTime+=time;
-        Log.d("IoTTimer","reasoning time: "+reasonTime);
+    public static void reasonTimeIncrease(long time) {
+        reasonTime += time;
+        Log.d("IoTTimer", "reasoning time: " + reasonTime);
+        handler.post(new Runnable() {
+            public void run() {
+                instance.tv_reasoningTime.setText("Reasoning time: "+reasonTime);
+            }
+        });
     }
 
-    public static void transmissionTimeIncrease( long time){
-        transmissionTime+=time;
-        Log.d("IoTTimer","transmission time: "+transmissionTime);
+    public static void transmissionTimeIncrease(long time) {
+        transmissionTime += time;
+        Log.d("IoTTimer", "transmission time: " + transmissionTime);
+        handler.post(new Runnable() {
+            public void run() {
+                instance.tv_transmissionTime.setText("Transmission to server time: "+transmissionTime);
+            }
+        });
     }
 
 
     @Override
     protected void onStop() {
         super.onStop();
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://com.mscthesis.pli.iotgateway/http/host/path")
+        );
+        AppIndex.AppIndexApi.end(client, viewAction);
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
         //server.stop();
         //isExisting =false;
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.disconnect();
     }
 
 
     public String getLocalIpAddress() {
         try {
 
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
 
                 NetworkInterface intf = en.nextElement();
 
-                for (Enumeration<InetAddress> ipAddr = intf.getInetAddresses(); ipAddr.hasMoreElements();) {
+                for (Enumeration<InetAddress> ipAddr = intf.getInetAddresses(); ipAddr.hasMoreElements(); ) {
 
                     InetAddress inetAddress = ipAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress()) {
-                        String ip=inetAddress.getHostAddress();
-                        if(ip.charAt(3)=='.' || ip.charAt(2)=='.')
+                        String ip = inetAddress.getHostAddress();
+                        if (ip.charAt(3) == '.' || ip.charAt(2) == '.')
                             return ip;
 
                     }
@@ -161,10 +239,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public static void reasoning(String data){
+    public static void reasoning(String data) {
 
         //Log.d("IoTReasoner", " public static void reasoning(String data){" );
-        final String rdfData=data;
+        final String rdfData = data;
         //instance.statusView.setText(instance.statusView.getText()+"\n"+instance.intent.getStringExtra(IoTResource.RDF_DATA));
         instance.requestNumber++;
         handler.post(new Runnable() {
@@ -183,13 +261,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
         //Use thread to reasoning
 
 
         new Thread(new Runnable() {
             public void run() {
-                Date startTime = new java.util.Date();
+                Date startTime = new Date();
                 Log.d("IoTReasoner", "Start reasoning.");
                 IoTReasoner ioTReasoner;
                 ioTReasoner = new IoTReasoner();
@@ -197,12 +274,12 @@ public class MainActivity extends AppCompatActivity {
 
                 Model model = ModelFactory.createDefaultModel();
                 StringReader reader = new StringReader(rdfData);
-                model.read( reader,null,"RDF/XML" );
+                model.read(reader, null, "RDF/XML");
                 ioTReasoner.setDataModel(model);
                 Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
                 Log.d("IoTReasoner", "Finish reasoning.");
-                Date reasoningFinishTime = new java.util.Date();
-                MainActivity.reasonTimeIncrease( reasoningFinishTime.getTime()-startTime.getTime() );
+                Date reasoningFinishTime = new Date();
+                MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
                 //send to cloud
                 //MQTTclient_pub client = new MQTTclient_pub( httpURI,"IoTReasoning",getLocalIpAddress() );
                 //client.publish(rdfData);//change to model
@@ -216,7 +293,10 @@ public class MainActivity extends AppCompatActivity {
 
                 handler.post(new Runnable() {
                     public void run() {
-                        instance.resultView.setText( instance.statusView.getText()+ resultModel);
+                        instance.resultView.setText(
+                                instance.resultView.getText()+
+                                        "\n****************************************\n"
+                                        +resultModel);
                     }
                 });
 
@@ -224,11 +304,12 @@ public class MainActivity extends AppCompatActivity {
                 StringWriter out = new StringWriter();
                 union.write(out, "RDF/XML");
                 //client.publish(out.toString());
-                IoTMqttClient Mclient = new IoTMqttClient( httpURI,"IoTReasoning" , "gateway");
+                IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway");
                 Mclient.publish(out.toString());
             }
         }).start();
     }
+
     private float readCPUUsage() {
         try {
             RandomAccessFile reader = new RandomAccessFile("/proc/stat", "r");
@@ -242,7 +323,8 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 Thread.sleep(360);
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
 
             reader.seek(0);
             load = reader.readLine();
@@ -254,7 +336,7 @@ public class MainActivity extends AppCompatActivity {
             long cpu2 = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[5])
                     + Long.parseLong(toks[6]) + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
 
-            return (float)(cpu2 - cpu1) / ((cpu2 + idle2) - (cpu1 + idle1));
+            return (float) (cpu2 - cpu1) / ((cpu2 + idle2) - (cpu1 + idle1));
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -262,4 +344,67 @@ public class MainActivity extends AppCompatActivity {
 
         return 0;
     }
+
+    class ServerThread implements Runnable {
+
+        public void run() {
+            Socket socket = null;
+            try {
+                serverSocket = new ServerSocket(SERVERPORT);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            while (!Thread.currentThread().isInterrupted()) {
+
+                try {
+
+                    socket = serverSocket.accept();
+
+                    CommunicationThread commThread = new CommunicationThread(socket);
+                    new Thread(commThread).start();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    class CommunicationThread implements Runnable {
+
+        private Socket clientSocket;
+
+        private BufferedReader input;
+
+        public CommunicationThread(Socket clientSocket) {
+
+            this.clientSocket = clientSocket;
+
+            try {
+
+                this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void run() {
+
+            while (!Thread.currentThread().isInterrupted()) {
+
+                try {
+
+                    String read = input.readLine();
+
+                    Log.d("IoTReasoner","Receive from socket "+ read);
+                    MainActivity.reasoning(read);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
 }

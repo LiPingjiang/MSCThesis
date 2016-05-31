@@ -60,4 +60,5 @@ android {
         // http://mvnrepository.com/artifact/org.apache.jena/jena-iri
         compile 'org.apache.jena:jena-iri:0.9.3'
         compile files('src/main/libs/org.eclipse.paho.client.mqttv3-1.0.2.jar')
+        compile 'com.google.android.gms:play-services-appindexing:8.1.0'
     }

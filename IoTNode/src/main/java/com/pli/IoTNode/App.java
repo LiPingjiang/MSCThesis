@@ -1,10 +1,15 @@
 package com.pli.IoTNode;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -24,7 +29,7 @@ public class App
 {
 	static int incidentStartNumber = 15000;
 	static int NumberOfThreads = 1;		//how many threads(IoTNodes)
-	static int DataSize = 1; 	//how many data send in total
+	static int DataSize = 400; 	//how many data send in total
 	static int DataPackageSize = 50; 	//how many data send together
 	static String prefix ;
 	static String suffix ;
@@ -191,14 +196,41 @@ public class App
 						//CoapClient_pub.put(coapHandler,"coap://192.168.43.162:5683/IoTReasoner/"+clientId ,rdfData);
 						//CoapClient_pub.put(coapHandler,gatewayURI+clientId ,rdfData);
 						String address =IoTReasonerAddress.get(clientId%IoTReasonerAddress.size());
-						System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId);
-						IoTCoapClient coapClient = new IoTCoapClient("coap://"+address+":5683/IoTReasoner/"+clientId, new CoapHandlerTimer());
+						
+						int index = 1;
 						for(String rdf : rdfList){
 //							System.out.println(rdf);
-							coapClient.put(rdf);
-							
+							//IoTCoapClient coapClient = new IoTCoapClient("coap://"+address+":5683/IoTReasoner/"+clientId, new CoapHandlerTimer());
+							//System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId+"/"+index);
+							//coapClient.put(rdf);
+							//index ++;//contact to different resource so no "Wrong block number" error
+							//https://examples.javacodegeeks.com/android/core/socket-core/android-socket-example/
+							Socket socket=null;
+							try {
+								socket = new Socket(address, 6000);
+							} catch (UnknownHostException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+					        
+					        try {
+
+								PrintWriter out = new PrintWriter(new BufferedWriter(
+										new OutputStreamWriter(socket.getOutputStream())),
+										true);
+								out.println(rdf);
+							} catch (UnknownHostException e) {
+								e.printStackTrace();
+							} catch (IOException e) {
+								e.printStackTrace();
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
 						}
-						coapClient.close();
+						//coapClient.close();
 						
 						
 						
