@@ -29,8 +29,8 @@ public class App
 {
 	static int incidentStartNumber = 15000;
 	static int NumberOfThreads = 1;		//how many threads(IoTNodes)
-	static int DataSize = 400; 	//how many data send in total
-	static int DataPackageSize = 50; 	//how many data send together
+	static int DataSize = 200; 	//how many data send in total
+	static int DataPackageSize = 20; 	//how many data send together
 	static String prefix ;
 	static String suffix ;
 	static String httpURI ="tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
@@ -204,7 +204,10 @@ public class App
 							//System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId+"/"+index);
 							//coapClient.put(rdf);
 							//index ++;//contact to different resource so no "Wrong block number" error
+							
+							//socket synchronize
 							//https://examples.javacodegeeks.com/android/core/socket-core/android-socket-example/
+							Date startTime = new Date();
 							Socket socket=null;
 							try {
 								socket = new Socket(address, 6000);
@@ -222,6 +225,8 @@ public class App
 										new OutputStreamWriter(socket.getOutputStream())),
 										true);
 								out.println(rdf);
+								Date endTime = new Date();
+								App.timerIncrease( endTime.getTime()-startTime.getTime() );
 							} catch (UnknownHostException e) {
 								e.printStackTrace();
 							} catch (IOException e) {

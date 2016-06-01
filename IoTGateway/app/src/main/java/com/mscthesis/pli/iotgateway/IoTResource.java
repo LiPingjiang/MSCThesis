@@ -32,7 +32,8 @@ public class IoTResource extends CoapResource {
         //sendBroadcast(BROADCAST_RECEIVE, RDF_DATA, exchange.getRequestText());
         //Log.d("IoTReasoner","sned broadcast");
         //broadcaster.sendBroadcast(new Intent(BROADCAST_RECEIVE));
-        MainActivity.reasoning(exchange.getRequestText());
+        //MainActivity.reasoning(exchange.getRequestText());
+        MainActivity.addReasoningData(exchange.getRequestText());
 
     }
 
