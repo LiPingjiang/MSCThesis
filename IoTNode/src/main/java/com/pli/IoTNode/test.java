@@ -43,6 +43,7 @@ public class test {
 		client.put( coapHandler ,"test", MediaTypeRegistry.APPLICATION_RDF_XML);
 		
 		//System.out.println("send!");
+		@SuppressWarnings("resource")
 		Scanner keyboard = new Scanner(System.in);
 		keyboard.next();
 	}

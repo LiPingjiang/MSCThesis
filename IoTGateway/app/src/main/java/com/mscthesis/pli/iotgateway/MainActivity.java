@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     //private CoapServer server;
     public static MainActivity instance;
     int requestNumber = 0;
+    static int finishNumber = 0;
     boolean isExisting = false; //is another service exist, if exist , do not start new one as they listen to the same port
     static String httpURI = "tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
     static Handler handler = new Handler();
@@ -95,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         isExisting = false;
         instance = this;
         requestNumber = 0;
+
 
         informationView = (TextView) findViewById(R.id.Infomation);
         statusView = (TextView) findViewById(R.id.tv_status);
@@ -252,7 +254,25 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public static void updateStatusView(){
+        handler.post(new Runnable() {
+            public void run() {
+                ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+                ActivityManager activityManager = (ActivityManager) instance.getSystemService(ACTIVITY_SERVICE);
+                activityManager.getMemoryInfo(mi);
+
+                String text = "Receive " + instance.requestNumber + " request(s)." + " Finished: "+ finishNumber+ "\n" +
+                        "**************************************************\n" +
+                        "Gateway status: Used CPU " + instance.readCPUUsage() + " Available Memory: " + mi.availMem / 1024 / 1024 + "\n" +
+
+                        "**************************************************\n";
+                instance.statusView.setText(text);
+            }
+        });
+    }
     public static synchronized  void addReasoningData (String data) {
+        instance.requestNumber++;
+        updateStatusView();
         rdfArray.add(data);
         reasoning();
     }
@@ -263,22 +283,9 @@ public class MainActivity extends AppCompatActivity {
             Log.d("IoTReasoner", " create reasoning thread , current: "+ reasoningThreads );
             final String rdfData = (String) rdfArray.poll();
             //instance.statusView.setText(instance.statusView.getText()+"\n"+instance.intent.getStringExtra(IoTResource.RDF_DATA));
-            instance.requestNumber++;
+
             reasoningThreads++; // a new thread is running reasoning
-            handler.post(new Runnable() {
-                public void run() {
-                    ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
-                    ActivityManager activityManager = (ActivityManager) instance.getSystemService(ACTIVITY_SERVICE);
-                    activityManager.getMemoryInfo(mi);
 
-                    String text = "Receive " + instance.requestNumber + " request(s)." + "\n" +
-                            "**************************************************\n" +
-                            "Gateway status: Used CPU " + instance.readCPUUsage() + " Available Memory: " + mi.availMem / 1024 / 1024 + "\n" +
-
-                            "**************************************************\n";
-                    instance.statusView.setText(text);
-                }
-            });
 
 
             //Use thread to reasoning
@@ -326,6 +333,8 @@ public class MainActivity extends AppCompatActivity {
                     IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway");
                     Mclient.publish(out.toString());
                     reasoningThreads--;
+                    finishNumber++;
+                    updateStatusView();
                     if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
                         reasoning();
                     }
@@ -426,9 +435,10 @@ public class MainActivity extends AppCompatActivity {
 
                     String read = input.readLine();
 
-                    Log.d("IoTReasoner","Receive from socket "+ read);
+                    Log.d("IoTSocket","Receive from socket "+ read);
                     //MainActivity.reasoning(read);
-                    MainActivity.addReasoningData(read);
+                    if(read != null)
+                        MainActivity.addReasoningData(read);
 
                 } catch (IOException e) {
                     e.printStackTrace();

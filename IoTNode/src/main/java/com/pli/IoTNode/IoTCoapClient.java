@@ -1,15 +1,11 @@
 package com.pli.IoTNode;
 
 import java.util.Date;
-import java.util.logging.Handler;
-
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapHandler;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.Utils;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
-
-import com.pli.IoTNode.App.CoapHandlerTimer;
 
 public class IoTCoapClient {
 	String uri;

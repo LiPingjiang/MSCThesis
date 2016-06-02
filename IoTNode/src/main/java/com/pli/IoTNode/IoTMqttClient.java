@@ -69,7 +69,7 @@ public class IoTMqttClient implements MqttCallback{
     	message.setRetained(false);
 
     	// Publish the message
-    	System.out.println("Publishing to topic \"" + topic + "\" qos " + pubQoS);
+    	//System.out.println("Publishing to topic \"" + topic + "\" qos " + pubQoS);
     	MqttDeliveryToken token = null;
     	startTime=new java.util.Date();
     	try {

@@ -26,11 +26,12 @@ public class MQTTclient_sub{
 	
 	private MqttAsyncClient client;
 	private String topic = "test";
-	private String broker = "tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
+	//private String broker = "tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
+	private String broker;
 	int qos = 2;
     String clientId = "Pingjiang";
     MemoryPersistence persistence = new MemoryPersistence();
-    Date startTime;
+    //Date startTime;
     boolean isFirst;//is first message come?
     
 	MQTTclient_sub(String broker,String topic){
@@ -39,7 +40,7 @@ public class MQTTclient_sub{
 		this.broker = broker;
 		ioTReasoner = new IoTReasoner();
 		ioTReasoner.setDataFormat("RDF/XML");
-		isFirst=false;
+		//isFirst=false;
 	}
 
 	public boolean start(){
@@ -105,10 +106,11 @@ public class MQTTclient_sub{
         }
 
         public void messageArrived(String topic, MqttMessage message) throws Exception {
-        	if(isFirst==false){
-        		isFirst=true;
-        		startTime= new Date();
-        	}
+//        	if(isFirst==false){
+//        		isFirst=true;
+//        		startTime= new Date();
+//        	}
+        	Date startTime = new Date();
         	String data =new String(message.getPayload());
             //System.out.println("topic: " + topic +" message: " + data);
         	System.out.println("messageArrived");
@@ -129,7 +131,7 @@ public class MQTTclient_sub{
         	//IoTReasoner ioTReasoner = new IoTReasoner();
             //ioTReasoner.setDataFormat("RDF/XML");
             ioTReasoner.setDataModel(rdfModel);
-            ioTReasoner.inferModel(true);//TODO store in database
+            ioTReasoner.inferModel(true);
             
             System.out.println("Finish Reasoning.");
             now();

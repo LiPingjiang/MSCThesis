@@ -19,28 +19,33 @@ import java.util.Scanner;
 import org.eclipse.californium.core.CoapHandler;
 import org.eclipse.californium.core.CoapResponse;
 
-import com.pli.IoTNode.App.CoapHandlerTimer;
-
 /**
  * Hello world!
  *
  */
 public class App 
 {
-	static int incidentStartNumber = 15000;
-	static int NumberOfThreads = 1;		//how many threads(IoTNodes)
-	static int DataSize = 200; 	//how many data send in total
-	static int DataPackageSize = 20; 	//how many data send together
+	
+	static int NumberOfThreads = 80;		//how many threads(IoTNodes)
+	static int DataSize = 400; 				//how many data send in total
+	
+	static String httpURI ="tcp://ec2-52-58-213-99.eu-central-1.compute.amazonaws.com:1883";
+	
+	
+	
+	
+	static int DataPackageSize = 50; 	//how many data send together
+//	static int incidentStartNumber = 15000;
 	static String prefix ;
 	static String suffix ;
-	static String httpURI ="tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
+
 	static String gatewayURI ="coap://10.20.220.188:5683/IoTResource/";
 	static String path ;
 //	static String rdfData;
 	static DESTINATION destination;
 	static CoapHandler coapHandler;
 	static int totalRequest=0;
-	static TimeCounter counter;
+//	static TimeCounter counter;
 	static long timer;//used for accumulate the transformation time from each nodes
 	static int finishNumber;//count for how  many nodes has been finished transforming
 
@@ -52,8 +57,8 @@ public class App
 	
 	//ps: by doing this, the size is fix
 	static List<String> IoTReasonerAddress = Arrays.asList(
-			"192.168.0.107"
-			//"10.20.218.148", 
+			//"192.168.0.107"
+			"10.20.218.148" 
 			//"10.20.210.145"
 			);
     public static void main( String[] args )
@@ -82,6 +87,7 @@ public class App
 		String command="";
 		//do{
 //		rdfData = "";
+		@SuppressWarnings({ "resource", "resource" })
 		Scanner keyboard = new Scanner(System.in);
 		System.out.println("This is IoTNode, command:");
 		System.out.println("        1. Send RDF data to the Cloud Server");
@@ -108,9 +114,9 @@ public class App
 		finishNumber =0;
 		
 		//using threads
-    	counter = new TimeCounter(NumberOfThreads);
+//    	counter = new TimeCounter(NumberOfThreads);
     	for (int i = 1; i <= NumberOfThreads; i++) {
-    		Thread t = new JobSlice(counter,i,destination);
+    		Thread t = new JobSlice(i,destination);
     		t.start();
     	}
 	//}while(command != "exit");
@@ -124,15 +130,15 @@ public class App
     }
     static class JobSlice extends Thread {
     	
-		private TimeCounter latch;
-		private int n;
+		//private TimeCounter latch;
+		//private int n;
 		private int clientId;
 		private DESTINATION destination;
 		int dataProcessed;//how many rdf data has processed
-		public JobSlice(TimeCounter l, int i, DESTINATION destination) {
-			this.n=i;
+		public JobSlice(int i, DESTINATION destination) {
+			//this.n=i;
 			this.clientId = i;
-			this.latch = l;
+			//this.latch = l;
 			this.destination = destination;
 			dataProcessed = 0;
 
@@ -152,11 +158,22 @@ public class App
 							
 
 
-							inputStream 	= new FileInputStream( prefix+clientId+ "\\incident_"+ dataProcessed + suffix);
+							inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + suffix);
 							String result	= getStringFromInputStream(inputStream);
+							String backup = result;
 							//result			= result.substring(127,result.length()-10); //remove "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">" and "</rdf:RDF>"
-							result			= result.substring(125,result.length()-10);
-							rdfData 		+= result;
+							//System.out.println(clientId+ "\\incident_"+ dataProcessed+ "  ");
+							//System.out.println(result);
+							result = result.substring(125,result.length()-10);
+//							try{
+//								result = result.substring(125,result.length()-10);
+//							}catch (Exception e) {
+//								System.out.println("Error file:");
+//								System.out.println( prefix+clientId+ "/incident_"+ dataProcessed + suffix);
+//								//System.out.println(backup);
+//							}
+							
+							rdfData += result;
 
 
 						}
@@ -178,15 +195,12 @@ public class App
 				
 				switch(destination){
 					case TO_CLOUD_SERVER:{
-//						MQTTclient_pub client = new MQTTclient_pub( httpURI,"IoTReasoning",clientId+"" );
-//						client.publish(rdfData);
+						
 						IoTMqttClient Mclient = new IoTMqttClient( httpURI,"IoTReasoning" , clientId+"");
 						for(String rdf : rdfList){
 							Mclient.publish(rdf);
-//							System.out.println(rdf);
+//							timerIncrease(2);//test
 						}
-						//Mclient.close();
-						
 						
 						break;
 					}
@@ -201,7 +215,7 @@ public class App
 						for(String rdf : rdfList){
 //							System.out.println(rdf);
 							//IoTCoapClient coapClient = new IoTCoapClient("coap://"+address+":5683/IoTReasoner/"+clientId, new CoapHandlerTimer());
-							//System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId+"/"+index);
+							System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId+"/"+index);
 							//coapClient.put(rdf);
 							//index ++;//contact to different resource so no "Wrong block number" error
 							
@@ -234,6 +248,8 @@ public class App
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
+					        
+					        index++;
 						}
 						//coapClient.close();
 						
@@ -276,43 +292,47 @@ public class App
 		return sb.toString();
 
 	}
-    public static void timerIncrease(long time){
+    public static synchronized void timerIncrease(long time){
+    	
     	App.timer+=time;
     	App.finishNumber++;
-    	if(finishNumber == NumberOfThreads*(DataSize/DataPackageSize)){
+    	
+    	//System.out.println( "finishNumber"+finishNumber + "  NumberOfThreads*(DataSize/DataPackageSize): "+  NumberOfThreads*Math.ceil(( (float)DataSize/(float)DataPackageSize)) );
+    	
+    	if(finishNumber == NumberOfThreads*Math.ceil(( (float)DataSize/(float)DataPackageSize))){
     		System.out.println("Finish transmission. Transmission time: " + timer +" ("+timer/1000 +" seconds) "+timer/NumberOfThreads+" for each node." );
     	}
     }
 
-    public static class TimeCounter {
-		private final Object synchObj = new Object();
-		private int count;
-		private long startTime;
-
-		public TimeCounter(int NumberOfThreads) {
-			startTime =  (new Date()).getTime();
-			synchronized (synchObj) {
-				this.count = NumberOfThreads;
-			}
-		}
-		public void awaitZero() throws InterruptedException {
-			synchronized (synchObj) {
-				while (count > 0) {
-					synchObj.wait();
-				}
-			}
-		}
-		public void countDown() {
-			synchronized (synchObj) {
-				if (--count <= 0) {
-					synchObj.notifyAll();
-
-					System.out.println((new Date()).getTime() - startTime);
-					//TODO: post reasoning can be done here, get triples from database and reason
-				}
-			}
-		}
-	}
+//    public static class TimeCounter {
+//		private final Object synchObj = new Object();
+//		private int count;
+//		private long startTime;
+//
+//		public TimeCounter(int NumberOfThreads) {
+//			startTime =  (new Date()).getTime();
+//			synchronized (synchObj) {
+//				this.count = NumberOfThreads;
+//			}
+//		}
+//		public void awaitZero() throws InterruptedException {
+//			synchronized (synchObj) {
+//				while (count > 0) {
+//					synchObj.wait();
+//				}
+//			}
+//		}
+//		public void countDown() {
+//			synchronized (synchObj) {
+//				if (--count <= 0) {
+//					synchObj.notifyAll();
+//
+//					System.out.println((new Date()).getTime() - startTime);
+//					//TODO: post reasoning can be done here, get triples from database and reason
+//				}
+//			}
+//		}
+//	}
     public static class CoapHandlerTimer implements CoapHandler{
     	
     	Date startTime;

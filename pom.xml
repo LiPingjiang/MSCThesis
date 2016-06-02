@@ -26,5 +26,6 @@
     <module>CloudServer</module>
     <module>IoTNode</module>
     <module>IoTReasoner</module>
+    <module>RDFManager</module>
   </modules>
 </project>

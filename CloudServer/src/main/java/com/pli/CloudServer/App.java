@@ -1,11 +1,5 @@
 package com.pli.CloudServer;
 
-import java.io.IOException;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-
 /**
  * Auther Pingjiang Li
  * Data 2016.05.19 
@@ -22,8 +16,8 @@ public class App
         System.out.println( "IoT Reasoning is running!" );
         
         client = new MQTTclient_sub(
-        		"tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883",
-        		//"tcp:localhost:1883",
+        		//"tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883",
+        		"tcp://localhost:1883",
         		"IoTReasoning/+"
         		);
         client.start();
