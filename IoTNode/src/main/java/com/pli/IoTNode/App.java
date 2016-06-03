@@ -26,10 +26,10 @@ import org.eclipse.californium.core.CoapResponse;
 public class App 
 {
 	
-	static int NumberOfThreads = 80;		//how many threads(IoTNodes)
-	static int DataSize = 400; 				//how many data send in total
+	static int NumberOfThreads = 1;		//how many threads(IoTNodes)
+	static int DataSize = 10; 				//how many data send in total
 	
-	static String httpURI ="tcp://ec2-52-58-213-99.eu-central-1.compute.amazonaws.com:1883";
+	static String httpURI ="tcp://ec2-52-28-239-182.eu-central-1.compute.amazonaws.com:1883";
 	
 	
 	
@@ -48,6 +48,8 @@ public class App
 //	static TimeCounter counter;
 	static long timer;//used for accumulate the transformation time from each nodes
 	static int finishNumber;//count for how  many nodes has been finished transforming
+	
+	static Date totalStartTime;
 
 	
 	static public enum DESTINATION{
@@ -58,8 +60,9 @@ public class App
 	//ps: by doing this, the size is fix
 	static List<String> IoTReasonerAddress = Arrays.asList(
 			//"192.168.0.107"
-			"10.20.218.148" 
+			//"10.20.218.148" 
 			//"10.20.210.145"
+			"10.30.10.180"
 			);
     public static void main( String[] args )
     {
@@ -113,6 +116,7 @@ public class App
 		timer =0;
 		finishNumber =0;
 		
+		totalStartTime =new Date();
 		//using threads
 //    	counter = new TimeCounter(NumberOfThreads);
     	for (int i = 1; i <= NumberOfThreads; i++) {
@@ -240,6 +244,7 @@ public class App
 										true);
 								out.println(rdf);
 								Date endTime = new Date();
+								System.out.println("time: "+(endTime.getTime()-startTime.getTime()));
 								App.timerIncrease( endTime.getTime()-startTime.getTime() );
 							} catch (UnknownHostException e) {
 								e.printStackTrace();
@@ -301,6 +306,7 @@ public class App
     	
     	if(finishNumber == NumberOfThreads*Math.ceil(( (float)DataSize/(float)DataPackageSize))){
     		System.out.println("Finish transmission. Transmission time: " + timer +" ("+timer/1000 +" seconds) "+timer/NumberOfThreads+" for each node." );
+    		System.out.println("Transmision time in total: " + ((new Date()).getTime()-totalStartTime.getTime()) );
     	}
     }
 

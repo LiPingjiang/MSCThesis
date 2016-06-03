@@ -22,7 +22,7 @@ public class App
         		);
         client.start();
     }
-    public static void timerIncrease( long time){
+    public static synchronized void timerIncrease( long time){
     	reasoningTimer += time;
     	System.out.println( "Reasoning time: " + reasoningTimer + "("+ reasoningTimer/1000+" seconds)" );
     	

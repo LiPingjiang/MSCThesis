@@ -13,6 +13,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.android.gms.appindexing.Action;
@@ -114,6 +115,8 @@ public class MainActivity extends AppCompatActivity {
                         transmissionTime = 0;
                         statusView.setText("Reset the gateway, waiting for new reasoning tasks.");
                         resultView.setText("Reasoning result has been cleaned.");
+                        changehttpURI( ((EditText) findViewById(R.id.et_hostip)).getText().toString() );
+                        MaxThreads = Integer.parseInt( ((EditText) findViewById(R.id.et_threadNumber)).getText().toString() );
                     }
                 }
         );
@@ -177,6 +180,10 @@ public class MainActivity extends AppCompatActivity {
 ////            }
 //        }
 //    }
+
+    public void changehttpURI( String address){
+        httpURI="tcp://"+address+":1883";
+    }
 
     public static void reasonTimeIncrease(long time) {
         reasonTime += time;

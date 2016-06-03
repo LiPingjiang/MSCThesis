@@ -71,7 +71,7 @@ public class IoTMqttClient implements MqttCallback{
     	// Publish the message
     	//System.out.println("Publishing to topic \"" + topic + "\" qos " + pubQoS);
     	MqttDeliveryToken token = null;
-    	startTime=new java.util.Date();
+    	startTime=new Date();
     	try {
     		// publish message to broker
 			token = topic.publish(message);
@@ -104,8 +104,9 @@ public class IoTMqttClient implements MqttCallback{
 	public void deliveryComplete(IMqttDeliveryToken token) {
 		// TODO Auto-generated method stub
 		//System.out.println("Pub complete!");
-		finishTime = new java.util.Date();
+		finishTime = new Date();
 		timer = finishTime.getTime()-startTime.getTime();
+		System.out.println("Time: " + timer);
 		App.timerIncrease(timer);
 	}
 	

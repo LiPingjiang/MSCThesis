@@ -70,8 +70,8 @@ public class App
      * */
 	private static void generateArtificialData() {
 		
-		int carNumbers = 160 ;
-		int eachNode = 800; //how many RDF for each node
+		int carNumbers = 80 ;
+		int eachNode = 400; //how many RDF for each node
 		
 		for(int index = 1; index <= carNumbers ; index ++){
 			new File("C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+index ).mkdirs();
