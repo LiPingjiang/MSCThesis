@@ -76,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
     Thread serverThread = null;
     public static final int SERVERPORT = 6000;
     Handler updateConversationHandler;
-    public static String rdfFormat= "RDF/XML";
 
 
 
@@ -151,7 +150,13 @@ public class MainActivity extends AppCompatActivity {
                 new IntentFilter(IoTResource.BROADCAST_RECEIVE)
         );
 
-
+        //initServer();
+//        if (!isExisting) {
+//            server.start();
+//            isExisting = true;
+//        }
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
         Action viewAction = Action.newAction(
                 Action.TYPE_VIEW, // TODO: choose an action type.
                 "Main Page", // TODO: Define a title for the content shown.
@@ -198,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static void transmissionTimeIncrease(long time) {
         transmissionTime += time;
-        Log.d("IoTTimer", "transmission time: " + transmissionTime + " time:"+time);
+        Log.d("IoTTimer", "transmission time: " + transmissionTime);
         handler.post(new Runnable() {
             public void run() {
                 instance.tv_transmissionTime.setText("Transmission to server time: "+transmissionTime);
@@ -229,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
         //isExisting =false;
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
-        //client.disconnect();
+        client.disconnect();
     }
 
 
@@ -282,10 +287,7 @@ public class MainActivity extends AppCompatActivity {
         //Log.d("IoTSocket","Add Data.");
         synchronized (lockAdd) {
             instance.requestNumber++;
-
-
-//            updateStatusView();
-
+            updateStatusView();
             rdfArray.add(data);
         }
 
@@ -302,38 +304,9 @@ public class MainActivity extends AppCompatActivity {
                 reasoningThreads++; // a new thread is running reasoning
                 Log.d("IoTReasoner", "current thread: "+ reasoningThreads + " max thread: "+ reasoningThreads );
                 data = (String) rdfArray.poll();
-//                ReasonThread thread = new ReasonThread(data);
-//                thread.start();
-
-                Date startTime = new Date();
-                Log.d("IoTReasoner", "Start reasoning.");
-                IoTReasoner ioTReasoner;
-                ioTReasoner = new IoTReasoner();
-                ioTReasoner.setDataFormat("RDF/XML");
-
-                Model model = ModelFactory.createDefaultModel();
-                StringReader reader = new StringReader(data);
-                model.read(reader, null, "RDF/XML");
-                ioTReasoner.setDataModel(model);
-
-                //                    Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
-                InfModel infModel = ioTReasoner.inferAndGetResult();
-                Log.d("IoTReasoner", "Finish reasoning.");
-                Date reasoningFinishTime = new Date();
-                MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
-
-                StringWriter out = new StringWriter();
-                infModel.write(out, "RDF/XML");
-                //client.publish(out.toString());
-                IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway" );
-                Mclient.publish(out.toString());
-                reasoningThreads--;
-                finishNumber++;
-                updateStatusView();
-                if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
-                    reasoning();
-                }
-
+                ReasonThread thread = new ReasonThread(data);
+                thread.start();
+                //instance.statusView.setText(instance.statusView.getText()+"\n"+instance.intent.getStringExtra(IoTResource.RDF_DATA));
             }
         }
 
@@ -394,7 +367,6 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        }).start();
     }
-
 
 
     static public class ReasonThread extends Thread

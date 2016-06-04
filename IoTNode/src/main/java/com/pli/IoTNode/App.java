@@ -98,8 +98,13 @@ public class App
 		Scanner keyboard = new Scanner(System.in);
 		System.out.println("This is IoTNode, command:");
 		System.out.println("        1. Send RDF data to the Cloud Server");
-		System.out.println("        2. Send RDF data to the Gateway");
-		System.out.println("        3. Send JSON-LD data to the Gateway");
+		System.out.println("        2. Send JSON-LD data to the Cloud Server");
+		System.out.println("        3. Send N3 data to the Cloud Server");
+		System.out.println("        4. Send EN data to the Cloud Server");
+		System.out.println("        5. Send RDF data to the Gateway");
+		System.out.println("        6. Send JSON-LD data to the Gateway");
+		System.out.println("        7. Send N3 data to the Gateway");
+		System.out.println("        8. Send EN data to the Gateway");
 		System.out.println("        exit. To exit the system");
 		command = keyboard.next();
 		
@@ -108,10 +113,42 @@ public class App
 //			}
 		switch(command){
 			case "1":{
+				suffix = ".rdf";
 				destination=DESTINATION.TO_CLOUD_SERVER;
 				break;
 			}
 			case "2":{
+				suffix = ".json";
+				destination=DESTINATION.TO_CLOUD_SERVER;
+				break;
+			}
+			case "3":{
+				suffix = ".n3";
+				destination=DESTINATION.TO_CLOUD_SERVER;
+				break;
+			}
+			case "4":{
+				suffix = ".en";
+				destination=DESTINATION.TO_CLOUD_SERVER;
+				break;
+			}
+			case "5":{
+				suffix = ".rdf";
+				destination=DESTINATION.TO_GATEWAY;
+				break;
+			}
+			case "6":{
+				suffix = ".json";
+				destination=DESTINATION.TO_GATEWAY;
+				break;
+			}
+			case "7":{
+				suffix = ".n3";
+				destination=DESTINATION.TO_GATEWAY;
+				break;
+			}
+			case "8":{
+				suffix = ".en";
 				destination=DESTINATION.TO_GATEWAY;
 				break;
 			}
@@ -173,7 +210,10 @@ public class App
 							//result			= result.substring(127,result.length()-10); //remove "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">" and "</rdf:RDF>"
 							//System.out.println(clientId+ "\\incident_"+ dataProcessed+ "  ");
 							//System.out.println(result);
-							result = result.substring(125,result.length()-10);
+							if(suffix.equals(".rdf")){
+								result = result.substring(125,result.length()-10);
+							}
+							
 //							try{
 //								result = result.substring(125,result.length()-10);
 //							}catch (Exception e) {
@@ -186,7 +226,9 @@ public class App
 
 
 						}
-						rdfData = "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">"+rdfData+"</rdf:RDF>";
+						if(suffix.equals(".rdf")){
+							rdfData = "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">"+rdfData+"</rdf:RDF>";
+						}
 						rdfList.add(rdfData);
 						//System.out.println(rdfData);
 					}

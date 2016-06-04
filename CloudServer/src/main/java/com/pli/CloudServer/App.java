@@ -1,5 +1,7 @@
 package com.pli.CloudServer;
 
+import java.util.Scanner;
+
 /**
  * Auther Pingjiang Li
  * Data 2016.05.19 
@@ -13,16 +15,32 @@ public class App
 	
     public static void main( String[] args )
     {
-    	reasoningTimer = 0;
-        System.out.println( "IoT Reasoning is running!" );
-        
-		if(args.length==0)                     
-			System.out.println("No command line arguments");
-		else{
-			  System.out.println("Reasoning Type"+args[1]);
-			  rdfFormat = args[1];
+    	String command="";
+    	Scanner keyboard = new Scanner(System.in);
+		System.out.println("IoT Cloud Reasoner, command:");
+		System.out.println("        1. RDF");
+		System.out.println("        2. JSON-LD");
+		System.out.println("        3. N-TRIPLE");
+		System.out.println("        4. EN");
+		command = keyboard.next();
+		switch (command) {
+		case "1":
+			rdfFormat="RDF/XML";
+			break;
+		case "2":
+			rdfFormat="JSON-LD";
+			break;
+		case "3":
+			rdfFormat="N-TRIPLE";
+			break;
+		case "4":
+			rdfFormat="EN";
+			break;
+
+		default:
+			break;
 		}
-        
+        System.out.println("Data Format: " + rdfFormat);
         
         client = new MQTTclient_sub(
         		//"tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883",

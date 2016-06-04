@@ -27,7 +27,9 @@ public class App
     	
     	//transferRDFFiles();
     	
-    	generateArtificialData_json();
+//    	generateArtificialData_json();
+    	
+    	generateArtificialData_n3();
  
 
     	

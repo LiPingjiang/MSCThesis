@@ -121,7 +121,7 @@ public class MQTTclient_sub{
         	Model rdfModel =  ModelFactory.createDefaultModel();
         	
         	try {
-    			rdfModel.read(IOUtils.toInputStream(data, "UTF-8"), null, "RDF/XML");
+    			rdfModel.read(IOUtils.toInputStream(data, "UTF-8"), null, App.rdfFormat);
     		} catch (IOException e) {
     			// TODO Auto-generated catch block
     			System.out.println("run crash.");

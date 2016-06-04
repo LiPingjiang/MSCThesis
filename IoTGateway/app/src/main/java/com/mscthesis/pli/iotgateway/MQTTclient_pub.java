@@ -35,15 +35,18 @@ public class MQTTclient_pub{
             MqttClient sampleClient = new MqttClient(broker, clientId, persistence);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
+            //System.out.println("Connecting to broker: " + broker);
             sampleClient.connect(connOpts);
-
+            //System.out.println("Connected");
+            //System.out.println("Publishing message: " + content);
             MqttMessage message = new MqttMessage(content.getBytes());
             message.setQos(qos);
             sampleClient.publish(topic+"/"+clientId, message);
-
+            //System.out.println("Message published");
             sampleClient.disconnect();
-
-
+            //System.out.println("Disconnected");
+            //System.exit(0);
+            System.out.println("client "+ clientId + " publish data.");
             return true;
         } catch (MqttException me) {
             System.out.println("reason " 	+ me.getReasonCode());
