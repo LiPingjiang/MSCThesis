@@ -9,11 +9,20 @@ public class App
 {
 	public static MQTTclient_sub client;
 	public static long reasoningTimer;
+	public static String rdfFormat="RDF/XML";
 	
     public static void main( String[] args )
     {
     	reasoningTimer = 0;
         System.out.println( "IoT Reasoning is running!" );
+        
+		if(args.length==0)                     
+			System.out.println("No command line arguments");
+		else{
+			  System.out.println("Reasoning Type"+args[1]);
+			  rdfFormat = args[1];
+		}
+        
         
         client = new MQTTclient_sub(
         		//"tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883",

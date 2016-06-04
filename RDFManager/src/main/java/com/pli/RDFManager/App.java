@@ -27,7 +27,7 @@ public class App
     	
     	//transferRDFFiles();
     	
-    	generateArtificialData();
+    	generateArtificialData_json();
  
 
     	
@@ -70,8 +70,8 @@ public class App
      * */
 	private static void generateArtificialData() {
 		
-		int carNumbers = 80 ;
-		int eachNode = 400; //how many RDF for each node
+		int carNumbers = 160 ;
+		int eachNode = 800; //how many RDF for each node
 		
 		for(int index = 1; index <= carNumbers ; index ++){
 			new File("C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+index ).mkdirs();
@@ -125,6 +125,102 @@ public class App
             		        e.printStackTrace();
             		    }
             		    model.write(out);
+            		    break;
+        			}
+        		}
+        	}
+        	
+    	}
+		
+	}
+	
+	private static void generateArtificialData_json() {
+		
+		int carNumbers = 160 ;
+		int eachNode = 800; //how many RDF for each node
+		
+		for(int index = 1; index <= carNumbers ; index ++){
+			new File("C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+index ).mkdirs();
+		}
+		
+    	for(int index = 0; index < carNumbers*eachNode ; index ++){
+    		Model model = ModelFactory.createDefaultModel() ;
+        	model.read("C:\\Users\\pli\\Desktop\\obs_data_individuals_rdf\\incident_"+ (15000+index%72000 ) +".rdf") ;
+        	
+        	NodeIterator objs = model.listObjects();   	
+        	
+        	StmtIterator  stas = model.listStatements();
+        	while(stas.hasNext()){
+        		
+        		Statement sta = stas.next();
+        		
+        		if( sta.getObject().isLiteral() ){
+        			if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasID" ) ){
+
+        				model.remove(sta);
+        				
+        				model.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasID") , (index/eachNode+1) );
+        				
+        				FileWriter out = null;
+            		    
+            		    try {
+            		    	out = new FileWriter( "C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode +1) +"\\incident_"+ (index%eachNode) +".json" );
+            		        System.out.println("Write to C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode+1 ) +"\\incident_"+ (index%eachNode) +".json");
+            		    
+            		    } catch (IOException e) {
+            		        // TODO Auto-generated catch block
+            		    	System.out.println("Fail to write! ");
+            		        e.printStackTrace();
+            		    }
+            		    model.write(out,"JSON-LD");
+            		    break;
+        			}
+        		}
+        	}
+        	
+    	}
+		
+	}
+	
+	private static void generateArtificialData_n3() {
+		
+		int carNumbers = 160 ;
+		int eachNode = 800; //how many RDF for each node
+		
+		for(int index = 1; index <= carNumbers ; index ++){
+			new File("C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+index ).mkdirs();
+		}
+		
+    	for(int index = 0; index < carNumbers*eachNode ; index ++){
+    		Model model = ModelFactory.createDefaultModel() ;
+        	model.read("C:\\Users\\pli\\Desktop\\obs_data_individuals_rdf\\incident_"+ (15000+index%72000 ) +".rdf") ;
+        	
+        	NodeIterator objs = model.listObjects();   	
+        	
+        	StmtIterator  stas = model.listStatements();
+        	while(stas.hasNext()){
+        		
+        		Statement sta = stas.next();
+        		
+        		if( sta.getObject().isLiteral() ){
+        			if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasID" ) ){
+
+        				model.remove(sta);
+        				
+        				model.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasID") , (index/eachNode+1) );
+        				
+        				FileWriter out = null;
+            		    
+            		    try {
+            		    	out = new FileWriter( "C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode +1) +"\\incident_"+ (index%eachNode) +".n3" );
+            		        System.out.println("Write to C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode+1 ) +"\\incident_"+ (index%eachNode) +".n3");
+            		    
+            		    } catch (IOException e) {
+            		        // TODO Auto-generated catch block
+            		    	System.out.println("Fail to write! ");
+            		        e.printStackTrace();
+            		    }
+            		    model.write(out,"N-TRIPLE");
             		    break;
         			}
         		}

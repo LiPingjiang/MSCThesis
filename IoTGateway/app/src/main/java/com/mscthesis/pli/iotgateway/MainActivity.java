@@ -19,8 +19,11 @@ import android.widget.TextView;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.hp.hpl.jena.rdf.model.InfModel;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -63,15 +66,17 @@ public class MainActivity extends AppCompatActivity {
     static String httpURI = "tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
     static Handler handler = new Handler();
     static String resultModel;
-
+    static byte[] lockAdd = new byte[0];
+    static byte[] lockPool = new byte[0];
     static Queue rdfArray;
     static int reasoningThreads;
-    static int MaxThreads = 10;
+    static int MaxThreads = 1;
     //socket
     private ServerSocket serverSocket;
     Thread serverThread = null;
     public static final int SERVERPORT = 6000;
     Handler updateConversationHandler;
+    public static String rdfFormat= "RDF/XML";
 
 
 
@@ -85,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
 
         reasonTime = 0;
         transmissionTime = 0;
@@ -144,13 +151,7 @@ public class MainActivity extends AppCompatActivity {
                 new IntentFilter(IoTResource.BROADCAST_RECEIVE)
         );
 
-        //initServer();
-//        if (!isExisting) {
-//            server.start();
-//            isExisting = true;
-//        }
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
+
         Action viewAction = Action.newAction(
                 Action.TYPE_VIEW, // TODO: choose an action type.
                 "Main Page", // TODO: Define a title for the content shown.
@@ -197,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static void transmissionTimeIncrease(long time) {
         transmissionTime += time;
-        Log.d("IoTTimer", "transmission time: " + transmissionTime);
+        Log.d("IoTTimer", "transmission time: " + transmissionTime + " time:"+time);
         handler.post(new Runnable() {
             public void run() {
                 instance.tv_transmissionTime.setText("Transmission to server time: "+transmissionTime);
@@ -228,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
         //isExisting =false;
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.disconnect();
+        //client.disconnect();
     }
 
 
@@ -277,78 +278,183 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    public static synchronized  void addReasoningData (String data) {
-        instance.requestNumber++;
-        updateStatusView();
-        rdfArray.add(data);
-        reasoning();
-    }
-    public static synchronized void reasoning() {
-
-        //Log.d("IoTReasoner", " public static void reasoning(String data){" );
-        if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
-            Log.d("IoTReasoner", " create reasoning thread , current: "+ reasoningThreads );
-            final String rdfData = (String) rdfArray.poll();
-            //instance.statusView.setText(instance.statusView.getText()+"\n"+instance.intent.getStringExtra(IoTResource.RDF_DATA));
-
-            reasoningThreads++; // a new thread is running reasoning
+    public static void addReasoningData (String data) {
+        //Log.d("IoTSocket","Add Data.");
+        synchronized (lockAdd) {
+            instance.requestNumber++;
 
 
+//            updateStatusView();
 
-            //Use thread to reasoning
-
-            new Thread(new Runnable() {
-                public void run() {
-                    Date startTime = new Date();
-                    Log.d("IoTReasoner", "Start reasoning.");
-                    IoTReasoner ioTReasoner;
-                    ioTReasoner = new IoTReasoner();
-                    ioTReasoner.setDataFormat("RDF/XML");
-
-                    Model model = ModelFactory.createDefaultModel();
-                    StringReader reader = new StringReader(rdfData);
-                    model.read(reader, null, "RDF/XML");
-                    ioTReasoner.setDataModel(model);
-                    Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
-                    Log.d("IoTReasoner", "Finish reasoning.");
-                    Date reasoningFinishTime = new Date();
-                    MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
-                    //send to cloud
-                    //MQTTclient_pub client = new MQTTclient_pub( httpURI,"IoTReasoning",getLocalIpAddress() );
-                    //client.publish(rdfData);//change to model
-                    //merge the original rdf model and infered model together
-
-                    //update UI
-//                            resultModel = infermodel.toString();
-                    StringWriter inferOut = new StringWriter();
-                    infermodel.write(inferOut, "TURTLE");
-                    resultModel = inferOut.toString();
-
-                    handler.post(new Runnable() {
-                        public void run() {
-                            instance.resultView.setText(
-                                    instance.resultView.getText()+
-                                            "\n****************************************\n"
-                                            +resultModel);
-                        }
-                    });
-
-                    final Model union = ModelFactory.createUnion(model, infermodel);
-                    StringWriter out = new StringWriter();
-                    union.write(out, "RDF/XML");
-                    //client.publish(out.toString());
-                    IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway");
-                    Mclient.publish(out.toString());
-                    reasoningThreads--;
-                    finishNumber++;
-                    updateStatusView();
-                    if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
-                        reasoning();
-                    }
-                }
-            }).start();
+            rdfArray.add(data);
         }
 
+        reasoning();
+    }
+    public static void reasoning() {
+
+        //Log.d("IoTReasoner", " public static void reasoning(String data){" );
+        //if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() )
+        String data="";
+        synchronized (lockPool){
+            if( !rdfArray.isEmpty() && (reasoningThreads < MaxThreads) )
+            {
+                reasoningThreads++; // a new thread is running reasoning
+                Log.d("IoTReasoner", "current thread: "+ reasoningThreads + " max thread: "+ reasoningThreads );
+                data = (String) rdfArray.poll();
+//                ReasonThread thread = new ReasonThread(data);
+//                thread.start();
+
+                Date startTime = new Date();
+                Log.d("IoTReasoner", "Start reasoning.");
+                IoTReasoner ioTReasoner;
+                ioTReasoner = new IoTReasoner();
+                ioTReasoner.setDataFormat("RDF/XML");
+
+                Model model = ModelFactory.createDefaultModel();
+                StringReader reader = new StringReader(data);
+                model.read(reader, null, "RDF/XML");
+                ioTReasoner.setDataModel(model);
+
+                //                    Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
+                InfModel infModel = ioTReasoner.inferAndGetResult();
+                Log.d("IoTReasoner", "Finish reasoning.");
+                Date reasoningFinishTime = new Date();
+                MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
+
+                StringWriter out = new StringWriter();
+                infModel.write(out, "RDF/XML");
+                //client.publish(out.toString());
+                IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway" );
+                Mclient.publish(out.toString());
+                reasoningThreads--;
+                finishNumber++;
+                updateStatusView();
+                if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
+                    reasoning();
+                }
+
+            }
+        }
+
+
+//        final String rdfData = data;
+//        //Use thread to reasoning
+//
+//        new Thread(new Runnable() {
+//            public void run() {
+//                Date startTime = new Date();
+//                Log.d("IoTReasoner", "Start reasoning.");
+//                IoTReasoner ioTReasoner;
+//                ioTReasoner = new IoTReasoner();
+//                ioTReasoner.setDataFormat("RDF/XML");
+//
+//                Model model = ModelFactory.createDefaultModel();
+//                StringReader reader = new StringReader(rdfData);
+//                model.read(reader, null, "RDF/XML");
+//                ioTReasoner.setDataModel(model);
+//
+//        //                    Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
+//                InfModel infModel = ioTReasoner.inferAndGetResult();
+//                Log.d("IoTReasoner", "Finish reasoning.");
+//                Date reasoningFinishTime = new Date();
+//                MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
+//                //send to cloud
+//                //MQTTclient_pub client = new MQTTclient_pub( httpURI,"IoTReasoning",getLocalIpAddress() );
+//                //client.publish(rdfData);//change to model
+//                //merge the original rdf model and infered model together
+//
+//                //update UI
+//        //                            resultModel = infermodel.toString();
+//                //StringWriter inferOut = new StringWriter();
+//                //infModel.write(inferOut, "TURTLE");
+//                        /*resultModel = inferOut.toString();
+//
+//                        handler.post(new Runnable() {
+//                            public void run() {
+//                                instance.resultView.setText(
+//                                        instance.resultView.getText()+
+//                                                "\n****************************************\n"
+//                                                +resultModel);
+//                            }
+//                        });*/
+//
+//        //                    final Model union = ModelFactory.createUnion(model, infermodel);
+//                StringWriter out = new StringWriter();
+//                infModel.write(out, "RDF/XML");
+//                //client.publish(out.toString());
+//                IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway");
+//                Mclient.publish(out.toString());
+//                reasoningThreads--;
+//                finishNumber++;
+//                updateStatusView();
+//                if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
+//                    reasoning();
+//                }
+//            }
+//        }).start();
+    }
+
+
+
+    static public class ReasonThread extends Thread
+    {
+        private String rdfData;
+        public ReasonThread(String rdf)
+        {
+            this.rdfData = rdf;
+        }
+        public void run()
+        {
+            Date startTime = new Date();
+            Log.d("IoTReasoner", "Start reasoning.");
+            IoTReasoner ioTReasoner;
+            ioTReasoner = new IoTReasoner();
+            ioTReasoner.setDataFormat("RDF/XML");
+
+            Model model = ModelFactory.createDefaultModel();
+            StringReader reader = new StringReader(rdfData);
+            model.read(reader, null, "RDF/XML");
+            ioTReasoner.setDataModel(model);
+
+            //                    Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
+            InfModel infModel = ioTReasoner.inferAndGetResult();
+            Log.d("IoTReasoner", "Finish reasoning.");
+            Date reasoningFinishTime = new Date();
+            MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
+            //send to cloud
+            //MQTTclient_pub client = new MQTTclient_pub( httpURI,"IoTReasoning",getLocalIpAddress() );
+            //client.publish(rdfData);//change to model
+            //merge the original rdf model and infered model together
+
+            //update UI
+            //                            resultModel = infermodel.toString();
+            //StringWriter inferOut = new StringWriter();
+            //infModel.write(inferOut, "TURTLE");
+                        /*resultModel = inferOut.toString();
+
+                        handler.post(new Runnable() {
+                            public void run() {
+                                instance.resultView.setText(
+                                        instance.resultView.getText()+
+                                                "\n****************************************\n"
+                                                +resultModel);
+                            }
+                        });*/
+
+            //                    final Model union = ModelFactory.createUnion(model, infermodel);
+            StringWriter out = new StringWriter();
+            infModel.write(out, "RDF/XML");
+            //client.publish(out.toString());
+            IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway");
+            Mclient.publish(out.toString());
+            reasoningThreads--;
+            finishNumber++;
+            updateStatusView();
+            if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
+                reasoning();
+            }
+        }
     }
 
     private float readCPUUsage() {
@@ -442,7 +548,8 @@ public class MainActivity extends AppCompatActivity {
 
                     String read = input.readLine();
 
-                    Log.d("IoTSocket","Receive from socket "+ read);
+                    Log.d("IoTSocket","Receive from socket "+ read );
+
                     //MainActivity.reasoning(read);
                     if(read != null)
                         MainActivity.addReasoningData(read);

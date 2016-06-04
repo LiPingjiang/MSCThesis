@@ -23,7 +23,7 @@ public class IoTMqttClient implements MqttCallback{
 	MqttTopic topic ;
 	long timer;
 	Date startTime;
-	Date finishTime;
+	//Date finishTime;
 
 	
 	public IoTMqttClient(String url , String topic , String clientID){
@@ -35,8 +35,6 @@ public class IoTMqttClient implements MqttCallback{
 		
 		connOpt.setCleanSession(true);
 		connOpt.setKeepAliveInterval(30);
-//		connOpt.setUserName(M2MIO_USERNAME);
-//		connOpt.setPassword(M2MIO_PASSWORD_MD5.toCharArray());
 		
 		MemoryPersistence persistence = new MemoryPersistence();
 		
@@ -61,7 +59,7 @@ public class IoTMqttClient implements MqttCallback{
 	
 	public void publish(String pubMsg){
 
-   		int pubQoS = 2;
+   		int pubQoS = 0;
 		MqttMessage message = new MqttMessage(pubMsg.getBytes());
     	message.setQos(pubQoS);
     	message.setRetained(false);
@@ -75,6 +73,9 @@ public class IoTMqttClient implements MqttCallback{
 			token = topic.publish(message);
 	    	// Wait until the message has been delivered to the broker
 			token.waitForCompletion();
+			timer = new Date().getTime()-startTime.getTime();
+			MainActivity.transmissionTimeIncrease(timer);
+            myClient.disconnect();
 //			Thread.sleep(100);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -102,9 +103,9 @@ public class IoTMqttClient implements MqttCallback{
 	public void deliveryComplete(IMqttDeliveryToken token) {
 		// TODO Auto-generated method stub
 		//System.out.println("Pub complete!");
-		finishTime = new Date();
-		timer = finishTime.getTime()-startTime.getTime();
-		MainActivity.transmissionTimeIncrease(timer);
+		//finishTime = new Date();
+//		timer = new Date().getTime()-startTime.getTime();
+//		MainActivity.transmissionTimeIncrease(timer);
 	}
 	
 }

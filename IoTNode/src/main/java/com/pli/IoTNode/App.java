@@ -26,11 +26,21 @@ import org.eclipse.californium.core.CoapResponse;
 public class App 
 {
 	
-	static int NumberOfThreads = 1;		//how many threads(IoTNodes)
-	static int DataSize = 10; 				//how many data send in total
-	
-	static String httpURI ="tcp://ec2-52-28-239-182.eu-central-1.compute.amazonaws.com:1883";
-	
+	static int NumberOfThreads = 20;		//how many threads(IoTNodes)
+	static int DataSize = 400;
+	static String httpURI ="tcp://52.28.159.149:1883";
+	//ps: by doing this, the size is fix
+		static List<String> IoTReasonerAddress = Arrays.asList(
+				//"192.168.0.107"
+				//"10.20.210.145"
+//				"10.20.222.81",
+				"10.20.218.106",
+				"10.20.223.118"
+//				"10.20.201.78",
+//				"10.20.201.66",
+//				"10.20.195.183"
+//				"10.20.220.172"
+				);
 	
 	
 	
@@ -54,16 +64,10 @@ public class App
 	
 	static public enum DESTINATION{
 		TO_CLOUD_SERVER,
-		TO_GATEWAY
+		TO_GATEWAY,
 	}
 	
-	//ps: by doing this, the size is fix
-	static List<String> IoTReasonerAddress = Arrays.asList(
-			//"192.168.0.107"
-			//"10.20.218.148" 
-			//"10.20.210.145"
-			"10.30.10.180"
-			);
+	
     public static void main( String[] args )
     {
 
@@ -95,6 +99,7 @@ public class App
 		System.out.println("This is IoTNode, command:");
 		System.out.println("        1. Send RDF data to the Cloud Server");
 		System.out.println("        2. Send RDF data to the Gateway");
+		System.out.println("        3. Send JSON-LD data to the Gateway");
 		System.out.println("        exit. To exit the system");
 		command = keyboard.next();
 		
@@ -263,6 +268,7 @@ public class App
 						break;
 					
 					}
+					
 				}
 				
 			} finally {

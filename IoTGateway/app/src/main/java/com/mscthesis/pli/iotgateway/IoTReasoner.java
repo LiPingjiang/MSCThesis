@@ -100,14 +100,19 @@ public class IoTReasoner {
 //        this.setDataModel(rdfModel);
 //    }
 
+    public InfModel inferAndGetResult(){
+        InfModel infModel = inferFromRules();
+        return infModel;
+    }
     public Model inferModel(boolean store){
 
         //String[] classes = {"RightTurn", "LeftTurn", "UTurn", "Jam", "HighAvgSpeed", "LongStop", "HighAcceleration", "HighDeAcceleration", "VeryLongStop"};
-        String[] classes = {"RightTurn", "LeftTurn", "UTurn",
-                "JamSpeed1","JamSpeed2","JamSpeed3","JamSpeed4","Jam",
-                "Stop1","Stop2","Stop3","Stop4",
-                "LongStop",
-                "VeryLongStop",
+        String[] classes = {
+                //"RightTurn", "LeftTurn", "UTurn",
+                //"JamSpeed1","JamSpeed2","JamSpeed3","JamSpeed4","Jam",
+                //"Stop1","Stop2","Stop3","Stop4",
+                //"LongStop",
+                //"VeryLongStop",
                 "LowSpeed",
                 "HighAceleration","HighDeacceleration"
         };
