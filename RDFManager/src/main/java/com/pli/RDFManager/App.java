@@ -1,5 +1,6 @@
 package com.pli.RDFManager;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.sparql.expr.E_StrLength;
 import org.apache.jena.vocabulary.VCARD;
 
 /**
@@ -29,8 +31,9 @@ public class App
     	
 //    	generateArtificialData_json();
     	
-    	generateArtificialData_n3();
+//    	generateArtificialData_n3();
  
+    	generateArtificialData_en();
 
     	
     	
@@ -127,6 +130,7 @@ public class App
             		        e.printStackTrace();
             		    }
             		    model.write(out);
+            		    
             		    break;
         			}
         		}
@@ -232,6 +236,114 @@ public class App
 		
 	}
 
+	private static void generateArtificialData_en() {
+		
+		String ID = null;
+		String hasArea = null;
+		String hasLatitude = null;
+		String hasLongitude = null;
+		String hasVelocity = null;
+		String hasDirection = null;
+		String hasSender = null;
+		String hasDistance = null;
+		String hasAcceleration = null;
+		String hasDateTime = null;
+		String hasDate = null;
+		
+		int carNumbers = 160 ;
+		int eachNode = 800; //how many RDF for each node
+		
+		for(int index = 1; index <= carNumbers ; index ++){
+			new File("C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+index ).mkdirs();
+		}
+		
+    	for(int index = 0; index < carNumbers*eachNode ; index ++){
+    		Model model = ModelFactory.createDefaultModel() ;
+        	model.read("C:\\Users\\pli\\Desktop\\obs_data_individuals_rdf\\incident_"+ (15000+index%72000 ) +".rdf") ;
+        	
+        	NodeIterator objs = model.listObjects();   	
+        	
+        	StmtIterator  stas = model.listStatements();
+        	while(stas.hasNext()){
+        		
+        		Statement sta = stas.next();
+        		
+        		if( sta.getObject().isLiteral() ){
+        			ID = (index/eachNode+1)+"";
+        			
+        			if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasArea" ) ){
+        				hasArea =sta.getObject().asLiteral().getString();	;	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasArea" ) ){
+        				hasArea =sta.getObject().asLiteral().getString();	;	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasLatitude" ) ){
+        				hasLatitude =sta.getObject().asLiteral().getString();	;	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasLongitude" ) ){
+        				hasLongitude = sta.getObject().asLiteral().getString();	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasVelocity" ) ){
+        				hasVelocity = sta.getObject().asLiteral().getString();	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDirection" ) ){
+        				hasDirection = sta.getObject().asLiteral().getString();	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasSender" ) ){
+        				hasSender = sta.getObject().asLiteral().getString();	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDistance" ) ){
+        				hasDistance = sta.getObject().asLiteral().getString();	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasAcceleration" ) ){
+        				hasAcceleration = sta.getObject().asLiteral().getString();	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDateTime" ) ){
+        				hasDateTime = sta.getObject().asLiteral().getString();	
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDate" ) ){
+        				hasDate = sta.getObject().asLiteral().getString();	
+        			}
+        			
+        			
+        			
+
+        		}
+        	}
+        	FileWriter out = null;
+        	BufferedWriter bw = null;
+		    try {
+		    	out = new FileWriter( "C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode +1) +"\\incident_"+ (index%eachNode) +".en" );
+		        System.out.println("Write to C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode+1 ) +"\\incident_"+ (index%eachNode) +".en");
+		        bw = new BufferedWriter( out );
+		    } catch (IOException e) {
+		        // TODO Auto-generated catch block
+		    	System.out.println("Fail to write! ");
+		        e.printStackTrace();
+		    }
+		    //model.write(out,"N-TRIPLE");
+		    String enPacket = "[urn:uuid:7bcf39 ";
+            enPacket += ID+" "+ hasArea +" "+ hasLatitude +" "+ hasLongitude +
+                    " "+ hasVelocity +" "+  hasDirection +" "+ hasSender +" "+ hasDistance +" "
+                    + hasAcceleration +" "+ hasDate +" "+ hasDateTime ;
+
+            enPacket += "]";
+            
+            //System.out.println(enPacket);
+            try {
+            	bw.write( enPacket );
+                bw.close( );
+//				out.write(enPacket);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        	
+    	}
+		
+	}
+
+	
 	private static void transferRDFFiles() {
 		//total 8859
     	for(int index = 0; index <= 73859 ; index ++){
@@ -282,5 +394,5 @@ public class App
 		System.out.println("Folders created!.");
 		
 	}
-
+	
 }

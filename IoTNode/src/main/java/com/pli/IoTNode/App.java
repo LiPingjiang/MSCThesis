@@ -2,10 +2,12 @@ package com.pli.IoTNode;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -16,8 +18,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.eclipse.californium.core.CoapHandler;
 import org.eclipse.californium.core.CoapResponse;
+
+
 
 /**
  * Hello world!
@@ -26,20 +33,27 @@ import org.eclipse.californium.core.CoapResponse;
 public class App 
 {
 	
-	static int NumberOfThreads = 20;		//how many threads(IoTNodes)
+	static int NumberOfThreads = 10;		//how many threads(IoTNodes)
 	static int DataSize = 400;
-	static String httpURI ="tcp://52.28.159.149:1883";
+	static String httpURI ="tcp://52.58.92.249:1883";
 	//ps: by doing this, the size is fix
 		static List<String> IoTReasonerAddress = Arrays.asList(
 				//"192.168.0.107"
 				//"10.20.210.145"
 //				"10.20.222.81",
-				"10.20.218.106",
-				"10.20.223.118"
-//				"10.20.201.78",
+				//"10.20.218.106",
+				
+				
 //				"10.20.201.66",
 //				"10.20.195.183"
-//				"10.20.220.172"
+				
+//				"10.20.218.148",
+				"10.20.195.183"
+//				"10.20.206.208",
+//				"10.20.196.220",
+//				"10.20.223.118",
+//				"10.20.201.78"
+				
 				);
 	
 	
@@ -204,15 +218,21 @@ public class App
 							
 
 
-							inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + suffix);
+							//inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + suffix);
+							inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + ".rdf");
+							
 							String result	= getStringFromInputStream(inputStream);
 							String backup = result;
 							//result			= result.substring(127,result.length()-10); //remove "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">" and "</rdf:RDF>"
 							//System.out.println(clientId+ "\\incident_"+ dataProcessed+ "  ");
 							//System.out.println(result);
-							if(suffix.equals(".rdf")){
+//							System.out.println( "j="+j);
+							
+//							if(suffix.equals(".rdf")){
 								result = result.substring(125,result.length()-10);
-							}
+//							}if( suffix.equals(".json") && j!=1 ){
+//								result = "," + result;
+//							}
 							
 //							try{
 //								result = result.substring(125,result.length()-10);
@@ -226,11 +246,41 @@ public class App
 
 
 						}
-						if(suffix.equals(".rdf")){
+//						if(suffix.equals(".rdf")){
 							rdfData = "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">"+rdfData+"</rdf:RDF>";
+//						}
+//						else 
+						if( suffix.equals(".json") ){
+//							JenaJSONLD.init();
+							Model model = ModelFactory.createDefaultModel();
+							try {
+								model.read(IOUtils.toInputStream(rdfData, "UTF-8"), null, "RDF/XML");
+				    		} catch (IOException e) {
+				    			// TODO Auto-generated catch block
+				    			System.out.println("run crash.");
+				    			e.printStackTrace();
+				    		}
+			
+							OutputStream os = new ByteArrayOutputStream();
+							model.write(os, "JSON-LD");
+							rdfData = os.toString();
+						}else if(suffix.equals(".n3")){
+							Model model = ModelFactory.createDefaultModel();
+							try {
+								model.read(IOUtils.toInputStream(rdfData, "UTF-8"), null, "RDF/XML");
+				    		} catch (IOException e) {
+				    			// TODO Auto-generated catch block
+				    			System.out.println("run crash.");
+				    			e.printStackTrace();
+				    		}
+			
+							OutputStream os = new ByteArrayOutputStream();
+							model.write(os, "N-TRIPLE");
+							rdfData = os.toString();
 						}
+//						System.out.println(rdfData);
 						rdfList.add(rdfData);
-						//System.out.println(rdfData);
+												
 					}
 
 				} catch (FileNotFoundException e) {
@@ -249,6 +299,7 @@ public class App
 						
 						IoTMqttClient Mclient = new IoTMqttClient( httpURI,"IoTReasoning" , clientId+"");
 						for(String rdf : rdfList){
+
 							Mclient.publish(rdf);
 //							timerIncrease(2);//test
 						}
@@ -264,6 +315,7 @@ public class App
 						
 						int index = 1;
 						for(String rdf : rdfList){
+							rdf = rdf.replace("\n", "").replace("\r", "");
 //							System.out.println(rdf);
 							//IoTCoapClient coapClient = new IoTCoapClient("coap://"+address+":5683/IoTReasoner/"+clientId, new CoapHandlerTimer());
 							System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId+"/"+index);
@@ -291,7 +343,7 @@ public class App
 										true);
 								out.println(rdf);
 								Date endTime = new Date();
-								System.out.println("time: "+(endTime.getTime()-startTime.getTime()));
+								//System.out.println("time: "+(endTime.getTime()-startTime.getTime()));
 								App.timerIncrease( endTime.getTime()-startTime.getTime() );
 							} catch (UnknownHostException e) {
 								e.printStackTrace();
@@ -314,7 +366,7 @@ public class App
 				}
 				
 			} finally {
-				//latch.countDown();
+				
 			}
 		}
 	}
@@ -357,36 +409,8 @@ public class App
     		System.out.println("Transmision time in total: " + ((new Date()).getTime()-totalStartTime.getTime()) );
     	}
     }
+    
 
-//    public static class TimeCounter {
-//		private final Object synchObj = new Object();
-//		private int count;
-//		private long startTime;
-//
-//		public TimeCounter(int NumberOfThreads) {
-//			startTime =  (new Date()).getTime();
-//			synchronized (synchObj) {
-//				this.count = NumberOfThreads;
-//			}
-//		}
-//		public void awaitZero() throws InterruptedException {
-//			synchronized (synchObj) {
-//				while (count > 0) {
-//					synchObj.wait();
-//				}
-//			}
-//		}
-//		public void countDown() {
-//			synchronized (synchObj) {
-//				if (--count <= 0) {
-//					synchObj.notifyAll();
-//
-//					System.out.println((new Date()).getTime() - startTime);
-//					//TODO: post reasoning can be done here, get triples from database and reason
-//				}
-//			}
-//		}
-//	}
     public static class CoapHandlerTimer implements CoapHandler{
     	
     	Date startTime;

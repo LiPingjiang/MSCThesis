@@ -8,6 +8,8 @@ import java.util.Date;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -114,22 +116,44 @@ public class MQTTclient_sub{
         	String data =new String(message.getPayload());
             //System.out.println("topic: " + topic +" message: " + data);
         	System.out.println("messageArrived");
+//        	System.out.println(App.rdfFormat);
+//        	System.out.println(data);
             //Reasoning
         	now();
         	
            
         	Model rdfModel =  ModelFactory.createDefaultModel();
         	
-        	try {
-    			rdfModel.read(IOUtils.toInputStream(data, "UTF-8"), null, App.rdfFormat);
-    		} catch (IOException e) {
-    			// TODO Auto-generated catch block
-    			System.out.println("run crash.");
-    			e.printStackTrace();
-    		}
+        	if(App.rdfFormat.equals("RDF/XML")){
+        		try {
+        			rdfModel.read(IOUtils.toInputStream(data, "UTF-8"), null, App.rdfFormat);
+        		} catch (IOException e) {
+        			// TODO Auto-generated catch block
+        			System.out.println("run crash.");
+        			e.printStackTrace();
+        		}
+        	}else if( App.rdfFormat.equals("JSON-LD") ){
+        		try {
+        			RDFDataMgr.read(rdfModel, IOUtils.toInputStream(data, "UTF-8"),Lang.JSONLD);
+        		} catch (IOException e) {
+        			// TODO Auto-generated catch block
+        			System.out.println("run crash.");
+        			e.printStackTrace();
+        		}
+        	}else if( App.rdfFormat.equals("N-TRIPLE") ){
+        		try {
+        			RDFDataMgr.read(rdfModel, IOUtils.toInputStream(data, "UTF-8"),Lang.N3);
+        		} catch (IOException e) {
+        			// TODO Auto-generated catch block
+        			System.out.println("run crash.");
+        			e.printStackTrace();
+        		}
+        	}
         	
+        	
+        	//System.out.println("read");
         	//IoTReasoner ioTReasoner = new IoTReasoner();
-            //ioTReasoner.setDataFormat("RDF/XML");
+            ioTReasoner.setDataFormat(App.rdfFormat);
             ioTReasoner.setDataModel(rdfModel);
             ioTReasoner.inferModel(true);
             

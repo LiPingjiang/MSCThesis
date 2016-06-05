@@ -43,7 +43,7 @@ public class App
         System.out.println("Data Format: " + rdfFormat);
         
         client = new MQTTclient_sub(
-        		//"tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883",
+        		//"tcp://52.58.92.249:1883",
         		"tcp://localhost:1883",
         		"IoTReasoning/+"
         		);
