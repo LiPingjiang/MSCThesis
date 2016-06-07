@@ -33,9 +33,9 @@ import org.eclipse.californium.core.CoapResponse;
 public class App 
 {
 	
-	static int NumberOfThreads = 10;		//how many threads(IoTNodes)
-	static int DataSize = 400;
-	static String httpURI ="tcp://52.58.92.249:1883";
+	static int NumberOfThreads = 60;	//how many threads(IoTNodes)
+	static int DataSize = 800;
+	static String httpURI ="tcp://52.58.166.222:1883";
 	//ps: by doing this, the size is fix
 		static List<String> IoTReasonerAddress = Arrays.asList(
 				//"192.168.0.107"
@@ -47,12 +47,12 @@ public class App
 //				"10.20.201.66",
 //				"10.20.195.183"
 				
-//				"10.20.218.148",
-				"10.20.195.183"
-//				"10.20.206.208",
-//				"10.20.196.220",
+//				"10.20.218.148",//pad
+//				"10.20.195.183",//golden lg
+//				"10.20.220.172",//whit lg
+//				"10.20.196.220",//huawei
 //				"10.20.223.118",
-//				"10.20.201.78"
+				"10.20.201.78"
 				
 				);
 	
@@ -108,7 +108,7 @@ public class App
 		String command="";
 		//do{
 //		rdfData = "";
-		@SuppressWarnings({ "resource", "resource" })
+//		@SuppressWarnings({ "resource", "resource" })
 		Scanner keyboard = new Scanner(System.in);
 		System.out.println("This is IoTNode, command:");
 		System.out.println("        1. Send RDF data to the Cloud Server");
@@ -217,39 +217,40 @@ public class App
 							dataProcessed++;
 							
 
+							if (suffix.equals(".en")){
+								inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + ".en");
+								
+								String result	= getStringFromInputStream(inputStream);
+								String backup = result;
 
-							//inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + suffix);
-							inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + ".rdf");
-							
-							String result	= getStringFromInputStream(inputStream);
-							String backup = result;
-							//result			= result.substring(127,result.length()-10); //remove "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">" and "</rdf:RDF>"
-							//System.out.println(clientId+ "\\incident_"+ dataProcessed+ "  ");
-							//System.out.println(result);
-//							System.out.println( "j="+j);
-							
-//							if(suffix.equals(".rdf")){
+								//result = result.substring(1,result.length()-1);
+								//System.out.println("result"+result);
+								
+								if(j==1)
+									rdfData = result;
+								else
+									rdfData += "__" + result; 
+							}else{
+								//inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + suffix);
+								inputStream 	= new FileInputStream( prefix+clientId+ "/incident_"+ (dataProcessed-1) + ".rdf");
+								
+								String result	= getStringFromInputStream(inputStream);
+								String backup = result;
+
 								result = result.substring(125,result.length()-10);
-//							}if( suffix.equals(".json") && j!=1 ){
-//								result = "," + result;
-//							}
+
+								rdfData += result;
+							}
 							
-//							try{
-//								result = result.substring(125,result.length()-10);
-//							}catch (Exception e) {
-//								System.out.println("Error file:");
-//								System.out.println( prefix+clientId+ "/incident_"+ dataProcessed + suffix);
-//								//System.out.println(backup);
-//							}
-							
-							rdfData += result;
 
 
 						}
-//						if(suffix.equals(".rdf")){
+						if (suffix.equals(".en")){
+							
+						}else{
 							rdfData = "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:obs=\"http://localhost/SensorSchema/ontology#\">"+rdfData+"</rdf:RDF>";
-//						}
-//						else 
+						}
+						
 						if( suffix.equals(".json") ){
 //							JenaJSONLD.init();
 							Model model = ModelFactory.createDefaultModel();
@@ -312,49 +313,68 @@ public class App
 						//CoapClient_pub.put(coapHandler,"coap://192.168.43.162:5683/IoTReasoner/"+clientId ,rdfData);
 						//CoapClient_pub.put(coapHandler,gatewayURI+clientId ,rdfData);
 						String address =IoTReasonerAddress.get(clientId%IoTReasonerAddress.size());
-						
+						Date startTime = new Date();
+						Socket socket=null;
+						try {
+							System.out.println(address);
+							socket = new Socket(address, 6000);
+						} catch (UnknownHostException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						PrintWriter out = null;
+						try {
+
+							out = new PrintWriter(new BufferedWriter(
+									new OutputStreamWriter(socket.getOutputStream())),
+									true);
+							
+						} catch (UnknownHostException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 						int index = 1;
 						for(String rdf : rdfList){
 							rdf = rdf.replace("\n", "").replace("\r", "");
 //							System.out.println(rdf);
 							//IoTCoapClient coapClient = new IoTCoapClient("coap://"+address+":5683/IoTReasoner/"+clientId, new CoapHandlerTimer());
-							System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId+"/"+index);
+							//System.out.println("coap://"+address+":5683/IoTReasoner/"+clientId+"/"+index);
 							//coapClient.put(rdf);
 							//index ++;//contact to different resource so no "Wrong block number" error
 							
 							//socket synchronize
 							//https://examples.javacodegeeks.com/android/core/socket-core/android-socket-example/
-							Date startTime = new Date();
-							Socket socket=null;
-							try {
-								socket = new Socket(address, 6000);
-							} catch (UnknownHostException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							} catch (IOException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
+							
+							out.println(rdf);
+							Date endTime = new Date();
+							//System.out.println("time: "+(endTime.getTime()-startTime.getTime()));
+							App.timerIncrease( endTime.getTime()-startTime.getTime() );
 					        
-					        try {
-
-								PrintWriter out = new PrintWriter(new BufferedWriter(
-										new OutputStreamWriter(socket.getOutputStream())),
-										true);
-								out.println(rdf);
-								Date endTime = new Date();
-								//System.out.println("time: "+(endTime.getTime()-startTime.getTime()));
-								App.timerIncrease( endTime.getTime()-startTime.getTime() );
-							} catch (UnknownHostException e) {
-								e.printStackTrace();
-							} catch (IOException e) {
-								e.printStackTrace();
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
+					        
+					        
 					        
 					        index++;
 						}
+						if(socket!=null){
+				        	try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+				        	try {
+								socket.close();
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+				        }
 						//coapClient.close();
 						
 						
@@ -406,7 +426,7 @@ public class App
     	
     	if(finishNumber == NumberOfThreads*Math.ceil(( (float)DataSize/(float)DataPackageSize))){
     		System.out.println("Finish transmission. Transmission time: " + timer +" ("+timer/1000 +" seconds) "+timer/NumberOfThreads+" for each node." );
-    		System.out.println("Transmision time in total: " + ((new Date()).getTime()-totalStartTime.getTime()) );
+    		System.out.println("Transmision time in total: " + ((new Date()).getTime()-totalStartTime.getTime()) + " finish number: "+ finishNumber );
     	}
     }
     
