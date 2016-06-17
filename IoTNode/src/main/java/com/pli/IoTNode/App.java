@@ -33,9 +33,9 @@ import org.eclipse.californium.core.CoapResponse;
 public class App 
 {
 	
-	static int NumberOfThreads = 60;	//how many threads(IoTNodes)
-	static int DataSize = 800;
-	static String httpURI ="tcp://52.58.166.222:1883";
+	static int NumberOfThreads = 10;	//how many threads(IoTNodes)
+	static int DataSize = 400;
+	static String httpURI ="tcp://52.58.195.130:1883";
 	//ps: by doing this, the size is fix
 		static List<String> IoTReasonerAddress = Arrays.asList(
 				//"192.168.0.107"
@@ -52,7 +52,7 @@ public class App
 //				"10.20.220.172",//whit lg
 //				"10.20.196.220",//huawei
 //				"10.20.223.118",
-				"10.20.201.78"
+				"10.20.207.130"
 				
 				);
 	
