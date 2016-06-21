@@ -1,9 +1,17 @@
 package com.pli.RDFManager;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 
+import javax.swing.text.InternationalFormatter;
+
 import com.fasterxml.jackson.core.sym.Name;
+
 
 public class Entities {
 
@@ -23,6 +31,7 @@ public class Entities {
 		if (!entities.containsKey(EntityName)){
 			entities.put(EntityName, new Entity(EntityType, EntityName));
 		}
+		
 		entities.get(EntityName).Add(Type, Value);
 		
 	}
@@ -75,7 +84,8 @@ public class Entities {
 		
 		String EntityName = "anon_"+anonEntities.size();
 		anonEntities.put(EntityName, new Entity(EntityType, EntityName));
-
+    
+		addEntity(EntityType, EntityName);
 		
 		return EntityName;
 	}
@@ -93,7 +103,7 @@ public class Entities {
 	class Entity{
 		private String EntityType;
 		private String EntityName;
-		HashMap<String, String> container = new HashMap<String, String>(); //Relation And Characteristics
+		HashMap<String, List> container = new HashMap<String, List>(); //Relation And Characteristics
 		
 		Entity( String Type, String Name){
 			EntityType = Type;
@@ -104,19 +114,23 @@ public class Entities {
 		public boolean Add( String Type, String Value){
 			if(container.containsKey(Type)){
 				//check whether it is the same value
-				if(container.get(Type).equals(Value))
-					return true;
-				else
-					return false;
+//				if(container.get(Type).equals(Value))
+//					return true;
+//				else
+//					return false;
+				if(!container.get(Type).contains(Value))
+					container.get(Type).add(Value);
 			}else {
-				container.put( Type, Value);
+				List l = new ArrayList<>();
+				l.add(Value);
+				container.put( Type, l );
 			}
-				
+			
 			return true;
 		}
 		
-		public HashMap<String, String> get() {
-			return container;
+		public HashMap<String, List> get() {
+			return  container;
 		}
 		
 		public String getName(){
@@ -131,19 +145,23 @@ public class Entities {
 		String enString="";
 		
 		//Anotation
-		enString += "<!--Anotation-->\n";
-		enString += printEntitiesHashMap(anotations);
+//		enString += "<!--Anotation-->\n";
+//		enString += printEntitiesHashMap(anotations);
 		//ENTITY
 		enString += "<!--Entities-->\n";
 		enString += printEntitiesHashMap(entities);
 		//Anonymous Entity
-		enString += "<!--Anonymous Entities-->\n";
-		enString += printEntitiesHashMap(anonEntities);
+//		if(printAnonymous){
+//			enString += "<!--Anonymous Entities-->\n";
+//			enString += printEntitiesHashMap(anonEntities);
+//		}
+		
 		
 		return enString;
 	}
 	public String printEntitiesHashMap( HashMap< String, Entity> entities ) {
 		String result="";
+		String indentation ="";
 		
 		for(Entry<String, Entity> entry : entities.entrySet()) {
 		    String entityName = entry.getKey();
@@ -152,8 +170,22 @@ public class Entities {
 		    body +="< " + entity.getType() + " " + entityName + "\n";
 		    // do what you have to do here
 		    // In your case, an other loop.
-		    for(Entry<String, String> info : entity.get().entrySet()) {//info means relations or characteritics
-		    	body +="\t" + info.getKey() + " " + info.getValue() + "\n";
+
+		    for(Entry<String, List> info : entity.get().entrySet()) {//info means relations or characteritics
+		    	body +="\t" + info.getKey() + " ";// + info.getValue() + "\n";
+		    	Iterator<String> strings = info.getValue().iterator();
+		    	if(info.getValue().size()>1){
+		    		indentation="\t\t";
+		    		String string= strings.next();
+					body += string + "\n";
+		    	}
+		    	while (strings.hasNext()) {
+					String string= strings.next();
+					body += indentation + string + "\n";
+					
+				}
+		    	if(info.getValue().size()>1)
+		    		indentation="\t";
 		    }
 		    body+=">" + "\n";
 		    result += body;
