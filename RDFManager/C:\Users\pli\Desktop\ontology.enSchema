@@ -1,0 +1,141 @@
+<!--Anotation-->
+< en:anotation NameSpacePrefixMap
+	a http://www.example.com/#
+	study http://www.example.org/study/
+	game http://www.semanticweb.org/ontologies/game.owl#
+	owl http://www.w3.org/2002/07/owl#
+	var urn:swrl#
+	BusinessAnalysisEssentials http://www.udemy.com/BusinessAnalysisEssentials.owl#
+	rdaa http://rdaregistry.info/Elements/a/
+	module http://www.example.org/module/
+	xsd http://www.w3.org/2001/XMLSchema#
+	lecturer http://www.example.org/lecturer/
+	rdfs http://www.w3.org/2000/01/rdf-schema#
+	appointment http://www.example.org/appointment/
+	j.0 http://example.org/ontology#
+	s https://univie.ac.at/~a1507714/schema/
+	otherOnt http://example.org/otherOntologies/families/
+	rdf http://www.w3.org/1999/02/22-rdf-syntax-ns#
+	Univer http://www.Creat-Doc/Onto/Univer.owl
+	submodule http://www.example.org/submodule/
+	lecture http://www.example.org/lecture/
+	institute http://www.example.org/institute/
+	foaf http://xmlns.com/foaf/0.1/
+	group http://www.example.org/group/
+>
+
+<!--Entities-->
+< owl:DatatypeProperty http://example.com/owl/families/hasSSN
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:Class http://example.com/owl/families/Man
+	rdfs:subClassOf http://example.com/owl/families/Person
+	owl:disjointWith http://example.com/owl/families/Woman
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasSon
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:Class http://example.com/owl/families/JohnsChildren
+>
+< owl:Class http://example.com/owl/families/HappyPerson
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasAncestor
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasParent
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasGrandparent
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/parentOf
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasDaughter
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasWife
+	rdfs:range http://example.com/owl/families/Woman
+	rdfs:domain http://example.com/owl/families/Man
+>
+< owl:Class http://example.com/owl/families/Woman
+	rdfs:subClassOf http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasRelative
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasBrother
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:Class http://example.org/otherOntologies/families/Grownup
+>
+< owl:Class http://example.com/owl/families/Grandfather
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasAge
+	rdfs:range http://www.w3.org/2001/XMLSchema#nonNegativeInteger
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/loves
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:Class http://example.com/owl/families/Human
+	owl:equivalentClass http://example.com/owl/families/Person
+>
+< owl:Class http://example.com/owl/families/NarcisticPerson
+>
+< owl:Class http://example.com/owl/families/Parent
+>
+< owl:Class http://example.com/owl/families/Dead
+>
+< owl:Class http://example.com/owl/families/Teenager
+>
+< owl:Class http://example.com/owl/families/YoungChild
+>
+< owl:Class http://example.com/owl/families/Mother
+	rdfs:subClassOf http://example.com/owl/families/Woman
+>
+< owl:Class http://example.com/owl/families/Person
+>
+< owl:NamedIndividual http://example.com/owl/families/Mary
+	rdf:type http://example.com/owl/families/Woman
+>
+< owl:Class http://example.com/owl/families/Female
+>
+< owl:DatatypeProperty http://example.org/otherOntologies/families/age
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasSpouse
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:Class http://example.com/owl/families/Orphan
+>
+< owl:Class http://example.com/owl/families/SocialRole
+>
+< owl:Class http://example.com/owl/families/Adult
+	owl:equivalentClass http://example.org/otherOntologies/families/Grownup
+>
+< owl:Class http://example.com/owl/families/Father
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasHusband
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:Class http://example.com/owl/families/ChildlessPerson
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasFather
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasUncle
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.com/owl/families/hasChild
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:DatatypeProperty http://example.org/otherOntologies/families/child
+	rdfs:domain http://example.com/owl/families/Person
+>
+< owl:Class http://example.com/owl/families/MyBirthdayGuests
+>
+
+<!--Anonymous Entities-->
+
+
