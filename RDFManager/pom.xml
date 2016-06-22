@@ -46,6 +46,11 @@
 	  <artifactId>logback-classic</artifactId>
 	  <version>1.0.13</version>
 	</dependency>
+	<dependency>
+	  <groupId>com.jcabi</groupId>
+	  <artifactId>jcabi-xml</artifactId>
+	  <version>0.14</version>
+	</dependency>
 	
 	
   </dependencies>

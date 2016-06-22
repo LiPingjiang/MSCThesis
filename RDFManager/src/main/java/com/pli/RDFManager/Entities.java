@@ -1,16 +1,28 @@
 package com.pli.RDFManager;
 
-import java.lang.reflect.Array;
+import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import javax.swing.text.InternationalFormatter;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
-import com.fasterxml.jackson.core.sym.Name;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import com.jcabi.xml.XMLDocument;
 
 
 public class Entities {
@@ -41,7 +53,6 @@ public class Entities {
 		else {
 			addToEntity(EntityType,EntityName,Type,Value);
 		}
-		
 	}
 	
 	public void addEntity( String EntityType, String EntityName){
@@ -139,6 +150,9 @@ public class Entities {
 		public String getType(){
 			return EntityType;
 		}
+		public HashMap<String, List> getContent(){
+			return container;
+		}
 	}
 
 	public String toENSchema() {
@@ -148,7 +162,7 @@ public class Entities {
 //		enString += "<!--Anotation-->\n";
 //		enString += printEntitiesHashMap(anotations);
 		//ENTITY
-		enString += "<!--Entities-->\n";
+//		enString += "<!--Entities-->\n";
 		enString += printEntitiesHashMap(entities);
 		//Anonymous Entity
 //		if(printAnonymous){
@@ -159,6 +173,207 @@ public class Entities {
 		
 		return enString;
 	}
+	public String toRDFXML() {
+		String rdfString="";
+		
+
+		//ENTITY
+//		rdfString += "<!--Entities-->\n";
+		rdfString += printEntitiesHashMapToRDFXML(entities);
+
+		
+		
+		return rdfString;
+	}
+	private void addEntityToXMLNode(Document doc, Element superElement, Entity entity, HashMap<String, Entity> entities) {
+
+		if(entity == null || superElement==null)
+			return;
+//		System.out.println("superenlient: "+ getURI(superElement) + " entity: " + entity.getName());
+	    for(Entry<String, List> info : entity.get().entrySet()) {//info means relations or characteritics
+	    	switch (info.getKey()) {
+	    	case "rdf:about":{
+	    		Iterator<String> strings = info.getValue().iterator();
+		    	while (strings.hasNext()) {
+		    		
+					String string= strings.next();
+					Element element = doc.createElement(entity.getType());
+					//String[] attr = string.split("=");
+					element.setAttribute(info.getKey(), string);
+					superElement.appendChild(element);
+//					addEntityToXMLNode(doc, element, entities.get(info.getKey()), entities);
+				}
+	    		break;
+	    	}
+	    	case "rdf:resource":{
+	    		Iterator<String> strings = info.getValue().iterator();
+		    	while (strings.hasNext()) {
+		    		
+					String string= strings.next();
+					
+					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
+					
+					Element element = doc.createElement(entity.getType());
+					//String[] attr = string.split("=");
+					element.setAttribute("rdf:resource", string);
+					superElement.appendChild(element);
+					
+//					addEntityToXMLNode(doc, element, entities.get(string), entities);
+				}
+		    	break;
+	    	}
+	    	case "rdf:parseType":{
+	    		String string = info.getValue().get(0).toString();
+	    		Element element = doc.createElement(entity.getType());
+	    		element.setAttribute("rdf:parseType", string);
+	    		superElement.appendChild(element);
+	    		
+	    		break;
+	    	}
+	    	case "rdf:Description":{
+	    		String string = info.getValue().get(0).toString();
+	    		Element element = doc.createElement(entity.getType());
+	    		element.setAttribute("rdf:Description", string);
+	    		superElement.appendChild(element);
+	    		
+	    		break;
+	    	}
+	    	case "owl:targetValue":{
+	    		String string = info.getValue().get(0).toString();
+	    		
+	    		superElement.setTextContent(string);
+	    		break;
+	    	}
+			default:
+				Iterator<String> strings = info.getValue().iterator();
+		    	while (strings.hasNext()) {
+		    		
+					String string= strings.next();
+					
+					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
+					
+					Element element = doc.createElement(info.getKey());
+					//String[] attr = string.split("=");
+					element.setAttribute("rdf:about", string);
+//					element.setAttribute(info.getKey(), string);
+					superElement.appendChild(element);
+					System.out.println("super element URI: "+ getURI(element) + " this entity URI: " + entity.getName() + " next entity URI:"+ string);
+				    
+					addEntityToXMLNode(doc, element, entities.get(string), entities);
+				}
+				break;
+			}
+	    	
+
+	    }
+	}
+	private String getURI(Element element) {
+		if(element.hasAttribute("rdf:about"))
+			return element.getAttribute("rdf:about");
+		return null;
+	}
+
+	private String printEntitiesHashMapToRDFXML(HashMap<String, Entity> entities) {
+
+		
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+	    DocumentBuilder docBuilder=null;
+		try {
+			docBuilder = docFactory.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    Document doc = docBuilder.newDocument();
+	    Element rootElement = doc.createElement("rdf:RDF");
+	    doc.appendChild(rootElement);
+		
+	    //add xml prefix
+	    Entity xml = entities.get("anon_0");
+	    if(xml!=null){
+	    	for(Entry<String, List> entry : xml.getContent().entrySet()){
+		    	rootElement.setAttribute(entry.getKey().toString(), entry.getValue().toString());
+		    }
+	    }else{
+	    	System.out.println("XML is null");
+	    }
+	    
+	    
+	    //add entity
+		
+		for(Entry<String, Entity> entry : entities.entrySet()) {
+		    String entityName = entry.getKey();
+		    Entity entity = entry.getValue();
+		    if(!entity.getName().substring(0, 5).equals("anon_") ){
+		    
+		    	if( 	entity.getType()== "rdfs:Datatype" ||
+		    			entity.getType()== "owl:ObjectProperty" ||
+		    			entity.getType()== "owl:DatatypeProperty" ||
+		    			entity.getType()== "owl:Class" ||
+		    			entity.getType()== "owl:NamedIndividual" ||
+		    			entity.getType()== "rdf:Description"
+		    			){
+		    		System.out.println("main node: "+entity.getName() + " " +entity.getName().substring(0, 5));
+		    		Element element = doc.createElement(entity.getType());
+					element.setAttribute("rdf:about", entity.getName());
+					rootElement.appendChild(element);
+			    	addEntityToXMLNode(doc, element, entity, entities);
+	//		    	System.out.println( rootElement.getChildNodes().getLength() );
+		    	}
+		    		
+		    }
+		    
+		}
+		
+//		TransformerFactory tf = TransformerFactory.newInstance();
+//		Transformer transformer = null;
+//		try {
+//			transformer = tf.newTransformer();
+//		} catch (TransformerConfigurationException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		
+//		
+//		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+//		StringWriter writer = new StringWriter();
+//		try {
+//			transformer.transform(new DOMSource(doc), new StreamResult(writer));
+//		} catch (TransformerException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		String output = writer.getBuffer().toString().replaceAll("\n|\r", "");
+////		String output = writer.getBuffer().toString();
+		
+		
+		
+		Transformer transformer = null;
+		try {
+			transformer = TransformerFactory.newInstance().newTransformer();
+		} catch (TransformerConfigurationException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (TransformerFactoryConfigurationError e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		//initialize StreamResult with File object to save to file
+		StreamResult result = new StreamResult(new StringWriter());
+		DOMSource source = new DOMSource(doc);
+		try {
+			transformer.transform(source, result);
+		} catch (TransformerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String xmlString = result.getWriter().toString();
+		
+//		String xmlString = new XMLDocument(doc).toString();
+		return xmlString;
+	}
+
 	public String printEntitiesHashMap( HashMap< String, Entity> entities ) {
 		String result="";
 		String indentation ="";
@@ -167,7 +382,7 @@ public class Entities {
 		    String entityName = entry.getKey();
 		    Entity entity = entry.getValue();
 		    String body="";
-		    body +="< " + entity.getType() + " " + entityName + "\n";
+		    body +="<" + entity.getType() + " " + entityName + "\n";
 		    // do what you have to do here
 		    // In your case, an other loop.
 

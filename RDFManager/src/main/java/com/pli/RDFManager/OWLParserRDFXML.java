@@ -4,38 +4,11 @@ package com.pli.RDFManager;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
-import javax.enterprise.context.ContextNotActiveException;
-import javax.swing.text.StyledEditorKit.BoldAction;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.jena.ontology.AnnotationProperty;
-import org.apache.jena.ontology.DatatypeProperty;
-import org.apache.jena.ontology.Individual;
-import org.apache.jena.ontology.ObjectProperty;
-import org.apache.jena.ontology.OntClass;
-import org.apache.jena.ontology.OntModel;
-import org.apache.jena.ontology.OntModelSpec;
-import org.apache.jena.ontology.OntProperty;
-import org.apache.jena.ontology.OntResource;
-import org.apache.jena.ontology.Restriction;
-import org.apache.jena.ontology.UnionClass;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.shared.JenaException;
-import org.apache.jena.sparql.function.library.print;
-import org.apache.jena.sparql.function.library.leviathan.log;
-import org.apache.jena.util.FileManager;
-import org.apache.jena.util.iterator.ExtendedIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -44,8 +17,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import com.pli.RDFManager.Entities.Entity;
 
 public class OWLParserRDFXML {
 	
@@ -67,6 +38,7 @@ public class OWLParserRDFXML {
 		
 //		parser.printToFile(pathPrefix + "ontology.enSchema", finalMessage);
 		parser.printToFile(pathPrefix + "ontology.enSchema", entities.toENSchema() );
+		parser.printToFile(pathPrefix + "ontology2.enSchema", entities.toRDFXML() );
 		
 	}
 	public void printToFile(String path, String data){
@@ -87,7 +59,7 @@ public class OWLParserRDFXML {
 		String URI = getURI(node);
 		String type = getType(node);
 		Boolean isAnonymous=false;
-	    logger.debug( node.getNodeName() );
+//	    logger.debug( node.getNodeName() );
 	    String content = node.getTextContent().replace(" ", "").replace("\n", "");
 	    
 
@@ -105,7 +77,7 @@ public class OWLParserRDFXML {
 	    
 	    if(superNode != null && getType(superNode)!= "rdf:RDF" ){
 	    	
-	    	logger.debug( type + " " + URI );
+//	    	logger.debug( type + " " + URI );
 	    	entities.addToEntity(getType(superNode), getURI(superNode), type, URI, false );
     	}
 	    
@@ -143,9 +115,9 @@ public class OWLParserRDFXML {
 		Boolean isAnonymous=true;
 		NamedNodeMap attributesList = node.getAttributes();
 		for (int j = 0; j < attributesList.getLength(); j++) {
-		        logger.debug("Attribute: "
-		                + attributesList.item(j).getNodeName() + " = "
-		                + attributesList.item(j).getNodeValue());
+//		        logger.debug("Attribute: "
+//		                + attributesList.item(j).getNodeName() + " = "
+//		                + attributesList.item(j).getNodeValue());
 //		        finalMessage+= "Attribute: "
 //		                + attributesList.item(j).getNodeName() + " = "
 //		                + attributesList.item(j).getNodeValue()+"\n";
