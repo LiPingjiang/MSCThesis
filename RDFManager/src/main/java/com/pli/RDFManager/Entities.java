@@ -19,6 +19,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.jena.sparql.pfunction.library.container;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -110,6 +111,9 @@ public class Entities {
 		anotations.get(EntityName).Add(Type, Value);
 		
 	}
+	public int getSize(){
+		return entities.size();
+	}
 	
 	class Entity{
 		private String EntityType;
@@ -191,18 +195,29 @@ public class Entities {
 			return;
 //		System.out.println("superenlient: "+ getURI(superElement) + " entity: " + entity.getName());
 	    for(Entry<String, List> info : entity.get().entrySet()) {//info means relations or characteritics
+	    	
+	    	System.out.println(info.getKey());
+	    	
 	    	switch (info.getKey()) {
 	    	case "rdf:about":{
-	    		Iterator<String> strings = info.getValue().iterator();
-		    	while (strings.hasNext()) {
-		    		
-					String string= strings.next();
-					Element element = doc.createElement(entity.getType());
-					//String[] attr = string.split("=");
-					element.setAttribute(info.getKey(), string);
-					superElement.appendChild(element);
-//					addEntityToXMLNode(doc, element, entities.get(info.getKey()), entities);
-				}
+//	    		String string = info.getValue().get(0).toString();
+//	    		Element element = doc.createElement(entity.getType());
+//	    		System.out.println("1. " + string);
+//	    		if(!string.substring(0, 5).equals("anon_")){
+//	    			System.out.println("2. " +string);
+//		    		element.setAttribute("rdf:about", string);
+//		    		superElement.appendChild(element);
+//	    		}
+//	    		Iterator<String> strings = info.getValue().iterator();
+//		    	while (strings.hasNext()) {
+//		    		
+//					String string= strings.next();
+//					Element element = doc.createElement(entity.getType());
+//					//String[] attr = string.split("=");
+//					element.setAttribute(info.getKey(), string);
+//					superElement.appendChild(element);
+////					addEntityToXMLNode(doc, element, entities.get(info.getKey()), entities);
+//				}
 	    		break;
 	    	}
 	    	case "rdf:resource":{
@@ -211,12 +226,15 @@ public class Entities {
 		    		
 					String string= strings.next();
 					
-					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
+//					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
 					
 					Element element = doc.createElement(entity.getType());
 					//String[] attr = string.split("=");
-					element.setAttribute("rdf:resource", string);
-					superElement.appendChild(element);
+					
+					
+//					element.setAttribute("rdf:resource", string);
+//					superElement.appendChild(element);
+					superElement.setAttribute("rdf:resource", string);
 					
 //					addEntityToXMLNode(doc, element, entities.get(string), entities);
 				}
@@ -233,8 +251,34 @@ public class Entities {
 	    	case "rdf:Description":{
 	    		String string = info.getValue().get(0).toString();
 	    		Element element = doc.createElement(entity.getType());
-	    		element.setAttribute("rdf:Description", string);
-	    		superElement.appendChild(element);
+	    		
+	    		if(string.substring(0, 5).equals("anon_")){
+//	    			System.out.println(string+" "+entities.get(string).getName() +" "+ entities.get(string).getType() );
+	    			Iterator<String> strings = info.getValue().iterator();
+			    	while (strings.hasNext()) {
+			    		
+						String s= strings.next();
+						
+//						System.out.println("Type: " + info.getKey() + "  Value: "+ string);
+						
+						Element e = doc.createElement(info.getKey());
+						//String[] attr = string.split("=");
+						if(!string.substring(0, 5).equals("anon_")){
+							e.setAttribute("rdf:about", s);
+						}
+							
+//						element.setAttribute(info.getKey(), string);
+						superElement.appendChild(e);
+//						System.out.println("super element URI: "+ getURI(element) + " this entity URI: " + entity.getName() + " next entity URI:"+ string);
+					    
+						addEntityToXMLNode(doc, e, entities.get(s), entities);
+					}
+//	    			addEntityToXMLNode(doc, element, entities.get(string), entities);
+	    		}else{
+		    		element.setAttribute("rdf:Description", string);
+		    		superElement.appendChild(element);
+	    		}
+	    		
 	    		
 	    		break;
 	    	}
@@ -244,20 +288,24 @@ public class Entities {
 	    		superElement.setTextContent(string);
 	    		break;
 	    	}
+
 			default:
 				Iterator<String> strings = info.getValue().iterator();
 		    	while (strings.hasNext()) {
 		    		
 					String string= strings.next();
 					
-					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
+//					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
 					
 					Element element = doc.createElement(info.getKey());
 					//String[] attr = string.split("=");
-					element.setAttribute("rdf:about", string);
+					if(!string.substring(0, 5).equals("anon_")){
+						element.setAttribute("rdf:about", string);
+					}
+						
 //					element.setAttribute(info.getKey(), string);
 					superElement.appendChild(element);
-					System.out.println("super element URI: "+ getURI(element) + " this entity URI: " + entity.getName() + " next entity URI:"+ string);
+//					System.out.println("super element URI: "+ getURI(element) + " this entity URI: " + entity.getName() + " next entity URI:"+ string);
 				    
 					addEntityToXMLNode(doc, element, entities.get(string), entities);
 				}
@@ -292,6 +340,7 @@ public class Entities {
 	    Entity xml = entities.get("anon_0");
 	    if(xml!=null){
 	    	for(Entry<String, List> entry : xml.getContent().entrySet()){
+//	    		System.out.println(entry.getKey().toString() +"_"+ entry.getValue().toString());
 		    	rootElement.setAttribute(entry.getKey().toString(), entry.getValue().toString());
 		    }
 	    }else{
@@ -306,19 +355,23 @@ public class Entities {
 		    Entity entity = entry.getValue();
 		    if(!entity.getName().substring(0, 5).equals("anon_") ){
 		    
-		    	if( 	entity.getType()== "rdfs:Datatype" ||
-		    			entity.getType()== "owl:ObjectProperty" ||
-		    			entity.getType()== "owl:DatatypeProperty" ||
-		    			entity.getType()== "owl:Class" ||
-		    			entity.getType()== "owl:NamedIndividual" ||
-		    			entity.getType()== "rdf:Description"
+		    	if( 	entity.getType().equals("rdfs:Datatype") ||
+		    			entity.getType().equals("owl:ObjectProperty") ||
+		    			entity.getType().equals("owl:DatatypeProperty") ||
+		    			entity.getType().equals("owl:Class") ||
+		    			entity.getType().equals("owl:NamedIndividual") ||
+		    			entity.getType().equals("rdf:Description")
 		    			){
-		    		System.out.println("main node: "+entity.getName() + " " +entity.getName().substring(0, 5));
+//		    		System.out.println("main node: "+entity.getName() + " " +entity.getName().substring(0, 5));
 		    		Element element = doc.createElement(entity.getType());
 					element.setAttribute("rdf:about", entity.getName());
 					rootElement.appendChild(element);
 			    	addEntityToXMLNode(doc, element, entity, entities);
 	//		    	System.out.println( rootElement.getChildNodes().getLength() );
+		    	}else{
+//		    		System.out.println( "not main node: "+ entity.getName()+" type:"+entity.getType());
+//		    		System.out.println( entity.getType() == "owl:NamedIndividual");
+//		    		System.out.println( entity.getType().equals("owl:NamedIndividual"));
 		    	}
 		    		
 		    }

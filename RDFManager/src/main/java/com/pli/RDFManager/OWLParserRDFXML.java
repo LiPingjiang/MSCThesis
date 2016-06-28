@@ -38,7 +38,7 @@ public class OWLParserRDFXML {
 		
 //		parser.printToFile(pathPrefix + "ontology.enSchema", finalMessage);
 		parser.printToFile(pathPrefix + "ontology.enSchema", entities.toENSchema() );
-		parser.printToFile(pathPrefix + "ontology2.enSchema", entities.toRDFXML() );
+//		parser.printToFile(pathPrefix + "ontology2.enSchema", entities.toRDFXML() );
 		
 	}
 	public void printToFile(String path, String data){
@@ -60,7 +60,8 @@ public class OWLParserRDFXML {
 		String type = getType(node);
 		Boolean isAnonymous=false;
 //	    logger.debug( node.getNodeName() );
-	    String content = node.getTextContent().replace(" ", "").replace("\n", "");
+	    //String content = node.getTextContent().replace(" ", "").replace("\n", "");
+		String content = node.getTextContent();
 	    
 
 	    if( URI == null ){
@@ -70,7 +71,7 @@ public class OWLParserRDFXML {
     	}else{
     		entities.addEntity(type, URI);
     	}
-	    if(content != "" && content.length() != 0 ){
+	    if(content != "" && content.length() != 0 && type != "rdf:RDF" && !content.contains(" ")){
 //	    	logger.debug("target size "+ content.length() + " content: "+ content);
 	    	entities.addToEntity(type, URI, "owl:targetValue", content, false );
 	    }
@@ -139,6 +140,7 @@ public class OWLParserRDFXML {
 			//logger.debug("getNodeName"+attributesList.item(j).getNodeName());
 			switch(attributesList.item(j).getNodeName() ){
 			 	case "rdf:RDF":{
+			 		
 					entities.addAnotations(type, URI, attributesList.item(j).getNodeName(), attributesList.item(j).getNodeValue());
 					break;
 				}
