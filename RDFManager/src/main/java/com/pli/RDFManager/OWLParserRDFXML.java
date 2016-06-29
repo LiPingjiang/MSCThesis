@@ -62,9 +62,10 @@ public class OWLParserRDFXML {
 		String URI = getURI(node);
 		String type = getType(node);
 		Boolean isAnonymous=false;
-//	    logger.debug( "Node Name: " + node.getNodeName() );
+	    
 	    //String content = node.getTextContent().replace(" ", "").replace("\n", "");
 		String content = node.getTextContent();
+//		logger.debug( "Node Name: " + node.getNodeName() + " content: " + content );
 
 		Boolean hasCollection = isCollection(node);
 		if( hasCollection ){
@@ -89,8 +90,11 @@ public class OWLParserRDFXML {
 	    		&& !content.contains(" ") && !content.contains("\t")
 	    		&& !hasCollection){
 //	    	logger.debug("target size "+ content.length() + " content: "+ content);
+	    	
 	    	entities.addToEntity(type, URI, "owl:targetValue", content, false );
 	    }
+	    
+	    
 	    
 	    if(superNode != null && getType(superNode)!= "rdf:RDF" ){
 
@@ -115,7 +119,10 @@ public class OWLParserRDFXML {
 	            //calls this method for all the children which is Element
 	        	if(hasCollection){
 	        		printNodeToCollection(currentNode, collectionEntity);
-	        	}else {
+	        	}if(currentNode.getNodeName().equals("rdfs:comment")){
+	    	    	
+	    	    	entities.addToEntity(type, URI, "rdfs:comment", currentNode.getTextContent(), isAnonymous );
+	    	    }else {
 	        		printNode(currentNode, node, hasCollection);
 	        	}
 	        	

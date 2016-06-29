@@ -21,6 +21,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 
 public class Entities {
@@ -210,7 +211,7 @@ public class Entities {
 //		System.out.println("superenlient: "+ getURI(superElement) + " entity: " + entity.getName());
 	    for(Entry<String, List<String>> info : entity.get().entrySet()) {//info means relations or characteritics
 	    	
-//	    	System.out.println(info.getKey());
+//	    	System.out.println("Entity: " + entity.getName()+ " attr Type: " + info.getKey());
 	    	
 	    	switch (info.getKey()) {
 	    	case "rdf:about":{
@@ -287,7 +288,18 @@ public class Entities {
 	    		
 	    		break;
 	    	}
-
+	    	case "rdfs:comment":{
+//	    		System.out.println("comment");
+	    		Iterator<String> strings = info.getValue().iterator();
+	    		while(strings.hasNext()){
+	    			String comment = strings.next();
+	    			Element element = doc.createElement("rdfs:comment");
+		    		element.setTextContent(comment);
+		    		superElement.appendChild(element);
+	    		}
+	    		
+	    		break;
+	    	}
 			default:
 				Iterator<String> strings = info.getValue().iterator();
 		    	while (strings.hasNext()) {
@@ -368,7 +380,7 @@ public class Entities {
 			    	addEntityToXMLNode(doc, element, entity, entities);
 	//		    	System.out.println( rootElement.getChildNodes().getLength() );
 		    	}else{
-		    		System.out.println( "not main node: "+ entity.getName()+" type:"+entity.getType());
+//		    		System.out.println( "not main node: "+ entity.getName()+" type:"+entity.getType());
 //		    		System.out.println( entity.getType() == "owl:NamedIndividual");
 //		    		System.out.println( entity.getType().equals("owl:NamedIndividual"));
 		    	}

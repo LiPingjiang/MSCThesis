@@ -81,18 +81,31 @@ public class EnSchemaParser {
 			eConstructor = null;
 
 		}else{
+	
 			
-			
-			String[] strings = line.substring(0,line.length()).split(" ");
-//			System.out.println("********************************    string: " + line.replace("\t", "") +" strings.length: " + strings.length);
-//			System.out.println(strings[0].replace("\t", ""));
-			if(strings.length==1){
-				entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, strings[0].replace("\t", "").replace(" ", ""));
-			}else if(strings.length==2){
-				eConstructor.lastRelationType = strings[0].replace("\t", "").replace(" ", "");
-				entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, strings[1].replace("\t", "").replace(" ", ""));
+			if(line.length()>15 && line.substring(0,13).replace("\t", "").equals("rdfs:comment") ){
+
+				eConstructor.lastRelationType = "rdfs:comment";
+				entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, line.substring(13,line.length()));
+//				System.out.println("strings: " + line.substring(13,line.length()));
 				
+			}else{
+//				System.out.println("text:" + line);
+				String[] strings = line.substring(0,line.length()).split(" ");
+//				System.out.println("********************************    string: " + line.replace("\t", "") +" strings.length: " + strings.length);
+//				System.out.println("type: " + strings[0].replace("\t", ""));
+				
+				if(strings.length==1){
+					entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, strings[0].replace("\t", "").replace(" ", ""));
+				}else if(strings.length==2){
+					eConstructor.lastRelationType = strings[0].replace("\t", "").replace(" ", "");
+					entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, strings[1].replace("\t", "").replace(" ", ""));
+//					System.out.println("length 2 "+strings[0].replace("\t", ""));
+				}
 			}
+				
+			
+			
 		}
 		
 	}
