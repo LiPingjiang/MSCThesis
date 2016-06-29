@@ -1,6 +1,7 @@
 package com.pli.RDFManager;
 
 
+import java.awt.Checkbox;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -33,8 +34,8 @@ public class OWLParserRDFXML {
 		finalMessage ="";
 		entities = new Entities();
 		
-		NodeList nodeList = doc.getChildNodes();
-		parser.printNode(doc.getDocumentElement(), null);
+//		NodeList nodeList = doc.getChildNodes();
+		parser.printNode(doc.getDocumentElement(), null,false);
 		
 //		parser.printToFile(pathPrefix + "ontology.enSchema", finalMessage);
 		parser.printToFile(pathPrefix + "ontology.enSchema", entities.toENSchema() );
@@ -54,49 +55,133 @@ public class OWLParserRDFXML {
 		out.close();
 	}
 	
-	public void printNode(Node node, Node superNode){
+	 public void printNode(Node node, Node superNode, Boolean isCollectionItem){
 		
+
+		String collectionEntity = "";
 		String URI = getURI(node);
 		String type = getType(node);
 		Boolean isAnonymous=false;
-//	    logger.debug( node.getNodeName() );
+//	    logger.debug( "Node Name: " + node.getNodeName() );
 	    //String content = node.getTextContent().replace(" ", "").replace("\n", "");
 		String content = node.getTextContent();
-	    
 
-	    if( URI == null ){
+		Boolean hasCollection = isCollection(node);
+		if( hasCollection ){
+			isAnonymous=true;
+			URI = entities.AddAnon(type);
+			collectionEntity = entities.AddCollection();
+			
+//			entities.addToEntity(getType(superNode), getURI(superNode), collectionEntity, URI, false );
+			//entities.addToEntity(type, URI, "en:Collection", collectionEntity, false );
+			
+		}else if( URI == null ){
+//			logger.debug("Node Name: " + node.getNodeName() + "  URI == NULL");
     		isAnonymous=true;
     		URI = entities.AddAnon(type);
+//    		logger.debug("Anonymous URL: "+ URI);
 			((Element)node).setAttribute("rdf:about",URI);
     	}else{
+//    		logger.debug("Node Name: " + node.getNodeName() + "  URI != NULL");
     		entities.addEntity(type, URI);
     	}
-	    if(content != "" && content.length() != 0 && type != "rdf:RDF" && !content.contains(" ")){
+	    if(content != "" && content.length() != 0 && type != "rdf:RDF" 
+	    		&& !content.contains(" ") && !content.contains("\t")
+	    		&& !hasCollection){
 //	    	logger.debug("target size "+ content.length() + " content: "+ content);
 	    	entities.addToEntity(type, URI, "owl:targetValue", content, false );
 	    }
 	    
 	    if(superNode != null && getType(superNode)!= "rdf:RDF" ){
-	    	
-//	    	logger.debug( type + " " + URI );
-	    	entities.addToEntity(getType(superNode), getURI(superNode), type, URI, false );
+
+	    	if(isCollectionItem){
+//	    		logger.debug( "type " + getType(superNode) + " URI " + getURI(superNode) );
+//	    		logger.debug( "type " + getType(node) + " URI " + getURI(node) );
+//		    	logger.debug( type + " " + URI );
+//	    		entities.addToEntity(getType(superNode), getURI(superNode), "en:hasItems", URI, false );
+	    	}else{
+	    		entities.addToEntity(getType(superNode), getURI(superNode), type, URI, false );
+	    	}
     	}
 	    
 	    //finalMessage+= node.getNodeName()+ "  " + content + "\n";
 	    
-	    printAttr( node );
+	    addAttr( node );
 
 	    NodeList nodeList = node.getChildNodes();
 	    for (int i = 0; i < nodeList.getLength(); i++) {
 	        Node currentNode = nodeList.item(i);
 	        if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
 	            //calls this method for all the children which is Element
+	        	if(hasCollection){
+	        		printNodeToCollection(currentNode, collectionEntity);
+	        	}else {
+	        		printNode(currentNode, node, hasCollection);
+	        	}
 	        	
-	        	printNode(currentNode, node);
 	        }
 	    }
 	}
 	
+	private void printNodeToCollection(Node node, String collectionEntity) {
+		
+		Boolean hasCollection = isCollection(node);
+		boolean isAnonymous;
+		String URI = getURI(node);
+		String type = getType(node);
+		
+		if( hasCollection ){
+			isAnonymous=true;
+			URI = entities.AddAnon(type);
+			collectionEntity = entities.AddCollection();
+			
+		}else if( URI == null ){
+    		isAnonymous=true;
+    		URI = entities.AddAnon(type);
+			((Element)node).setAttribute("rdf:about",URI);
+    	}else{
+    		entities.addEntity(type, URI);
+    	}
+		
+		addAttr(node);
+		
+		entities.addToEntity( entities.getType(collectionEntity) , collectionEntity , "en:hasItems", URI, false );
+		
+		NodeList nodeList = node.getChildNodes();
+	    for (int i = 0; i < nodeList.getLength(); i++) {
+	        Node currentNode = nodeList.item(i);
+	        if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
+	            //calls this method for all the children which is Element
+	        		printNode(currentNode, node, hasCollection);
+	        }
+	    }
+		
+	}
+	private boolean isCollection(Node node) {
+		Boolean hasCollection =false;
+		NamedNodeMap attributesList = node.getAttributes();
+		for (int j = 0; j < attributesList.getLength(); j++) {
+//		        logger.debug("Attribute: "
+//		                + attributesList.item(j).getNodeName() + " = "
+//		                + attributesList.item(j).getNodeValue());
+//		        finalMessage+= "Attribute: "
+//		                + attributesList.item(j).getNodeName() + " = "
+//		                + attributesList.item(j).getNodeValue()+"\n";
+		        switch(attributesList.item(j).getNodeName() ){
+//		        	case "rdf:about":{
+//		        		isAnonymous=false;
+//		        		URI=attributesList.item(j).getNodeValue();
+////		        		break;
+//		        	}
+		        	case "rdf:parseType":{
+		        		if(attributesList.item(j).getNodeValue().equals("Collection")){
+		        			hasCollection=true;
+		        		}
+		        	}
+		       }
+		}
+		return hasCollection;
+	}
 	private String getType(Node node) {
 		return node.getNodeName();
 	}
@@ -109,11 +194,13 @@ public class OWLParserRDFXML {
 	    }
 		return null;
 	}
-	public String printAttr(Node node){
+	public String addAttr(Node node){
 
 		String URI="";
 		String type = getType(node);
 		Boolean isAnonymous=true;
+		Boolean hasCollection=false;
+		
 		NamedNodeMap attributesList = node.getAttributes();
 		for (int j = 0; j < attributesList.getLength(); j++) {
 //		        logger.debug("Attribute: "
@@ -135,9 +222,11 @@ public class OWLParserRDFXML {
 			URI = entities.AddAnon(type);
 			((Element)node).setAttribute("rdf:about",URI);
 		 }
-		 
-		 for (int j = 0; j < attributesList.getLength(); j++) {
-			//logger.debug("getNodeName"+attributesList.item(j).getNodeName());
+		attributesList = node.getAttributes();
+		for (int j = 0; j < attributesList.getLength(); j++) {
+//			logger.debug("getNodeName "+attributesList.item(j).getNodeName());
+//			logger.debug("Attribute: " + attributesList.item(j).getNodeName() + " value: " + attributesList.item(j).getNodeValue() );
+//			logger.debug("type: " + type + " URI: " + URI  );
 			switch(attributesList.item(j).getNodeName() ){
 			 	case "rdf:RDF":{
 			 		
@@ -149,13 +238,16 @@ public class OWLParserRDFXML {
 					break;
 				}
 				default:{
+//					logger.debug("run default is Anonymous "+ isAnonymous);
 					entities.addToEntity(type, URI, attributesList.item(j).getNodeName(), attributesList.item(j).getNodeValue(), isAnonymous);
 					break;
 				}
 			}
 		}
+		
 
-		return URI;
+		
+		return null;
 	}
 
 	public Document loadRDFXML(String path){

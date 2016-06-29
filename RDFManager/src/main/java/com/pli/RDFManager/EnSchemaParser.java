@@ -63,6 +63,7 @@ public class EnSchemaParser {
 	EntityConstructor eConstructor = null;
 	private void addToEntityConstructor(String line) {
 		
+//		System.out.println("text:" + line);
 		if(line.equals(""))
 			return;
 		if(line.charAt(0)=='<'){
@@ -83,7 +84,7 @@ public class EnSchemaParser {
 			
 			
 			String[] strings = line.substring(0,line.length()).split(" ");
-//			System.out.println("********************************    string: " + line.replace("\t", "") +" strings.length" + strings.length);
+//			System.out.println("********************************    string: " + line.replace("\t", "") +" strings.length: " + strings.length);
 //			System.out.println(strings[0].replace("\t", ""));
 			if(strings.length==1){
 				entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, strings[0].replace("\t", "").replace(" ", ""));

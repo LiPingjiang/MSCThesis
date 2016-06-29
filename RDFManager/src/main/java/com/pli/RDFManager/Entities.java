@@ -19,17 +19,15 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.jena.sparql.pfunction.library.container;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.jcabi.xml.XMLDocument;
 
 
 public class Entities {
 
 	HashMap< String, Entity> entities = new HashMap< String, Entity>();// key = Entity Name, value = Entity Object
 	HashMap< String, Entity> anonEntities = new HashMap< String, Entity>();
+	HashMap< String, Entity> collectionEntities = new HashMap< String, Entity>();
 	HashMap< String, Entity> anotations = new HashMap< String, Entity>();
 	Entities(){
 		
@@ -49,9 +47,10 @@ public class Entities {
 		
 	}
 	public void addToEntity( String EntityType, String EntityName, String Type, String Value, boolean isAnonymous){
-		if(isAnonymous)
-			AddToAnon(EntityType,EntityName,Type,Value);
-		else {
+//		if(isAnonymous)
+//			AddToAnon(EntityType,EntityName,Type,Value);
+//		else 
+		{
 			addToEntity(EntityType,EntityName,Type,Value);
 		}
 	}
@@ -95,9 +94,20 @@ public class Entities {
 	public String AddAnon( String EntityType){
 		
 		String EntityName = "anon_"+anonEntities.size();
+		
 		anonEntities.put(EntityName, new Entity(EntityType, EntityName));
-    
 		addEntity(EntityType, EntityName);
+		
+		return EntityName;
+	}
+	public String AddCollection( ){
+		String EntityType = "en:Collection";
+		String EntityName = "Collection_"+collectionEntities.size();
+		collectionEntities.put(EntityName, new Entity(EntityType, EntityName));
+    
+		addEntity(EntityType, EntityName);//
+		
+		
 		
 		return EntityName;
 	}
@@ -115,10 +125,14 @@ public class Entities {
 		return entities.size();
 	}
 	
+	public String getType( String EntityName) {
+		return entities.get(EntityName).getType();
+	}
+	
 	class Entity{
 		private String EntityType;
 		private String EntityName;
-		HashMap<String, List> container = new HashMap<String, List>(); //Relation And Characteristics
+		HashMap<String, List<String>> container = new HashMap<String, List<String>>(); //Relation And Characteristics
 		
 		Entity( String Type, String Name){
 			EntityType = Type;
@@ -136,7 +150,7 @@ public class Entities {
 				if(!container.get(Type).contains(Value))
 					container.get(Type).add(Value);
 			}else {
-				List l = new ArrayList<>();
+				List<String> l = new ArrayList<>();
 				l.add(Value);
 				container.put( Type, l );
 			}
@@ -144,7 +158,7 @@ public class Entities {
 			return true;
 		}
 		
-		public HashMap<String, List> get() {
+		public HashMap<String, List<String>> get() {
 			return  container;
 		}
 		
@@ -154,7 +168,7 @@ public class Entities {
 		public String getType(){
 			return EntityType;
 		}
-		public HashMap<String, List> getContent(){
+		public HashMap<String, List<String>> getContent(){
 			return container;
 		}
 	}
@@ -194,30 +208,13 @@ public class Entities {
 		if(entity == null || superElement==null)
 			return;
 //		System.out.println("superenlient: "+ getURI(superElement) + " entity: " + entity.getName());
-	    for(Entry<String, List> info : entity.get().entrySet()) {//info means relations or characteritics
+	    for(Entry<String, List<String>> info : entity.get().entrySet()) {//info means relations or characteritics
 	    	
-	    	System.out.println(info.getKey());
+//	    	System.out.println(info.getKey());
 	    	
 	    	switch (info.getKey()) {
 	    	case "rdf:about":{
-//	    		String string = info.getValue().get(0).toString();
-//	    		Element element = doc.createElement(entity.getType());
-//	    		System.out.println("1. " + string);
-//	    		if(!string.substring(0, 5).equals("anon_")){
-//	    			System.out.println("2. " +string);
-//		    		element.setAttribute("rdf:about", string);
-//		    		superElement.appendChild(element);
-//	    		}
-//	    		Iterator<String> strings = info.getValue().iterator();
-//		    	while (strings.hasNext()) {
-//		    		
-//					String string= strings.next();
-//					Element element = doc.createElement(entity.getType());
-//					//String[] attr = string.split("=");
-//					element.setAttribute(info.getKey(), string);
-//					superElement.appendChild(element);
-////					addEntityToXMLNode(doc, element, entities.get(info.getKey()), entities);
-//				}
+
 	    		break;
 	    	}
 	    	case "rdf:resource":{
@@ -226,24 +223,18 @@ public class Entities {
 		    		
 					String string= strings.next();
 					
-//					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
+//					Element element = doc.createElement(entity.getType());
 					
-					Element element = doc.createElement(entity.getType());
-					//String[] attr = string.split("=");
-					
-					
-//					element.setAttribute("rdf:resource", string);
-//					superElement.appendChild(element);
 					superElement.setAttribute("rdf:resource", string);
 					
-//					addEntityToXMLNode(doc, element, entities.get(string), entities);
 				}
 		    	break;
 	    	}
 	    	case "rdf:parseType":{
 	    		String string = info.getValue().get(0).toString();
 	    		Element element = doc.createElement(entity.getType());
-	    		element.setAttribute("rdf:parseType", string);
+	    		//element.setAttribute("rdf:parseType", string);
+//	    		addCollectionToXMLNode(doc, element, entity, entities);
 	    		superElement.appendChild(element);
 	    		
 	    		break;
@@ -253,27 +244,20 @@ public class Entities {
 	    		Element element = doc.createElement(entity.getType());
 	    		
 	    		if(string.substring(0, 5).equals("anon_")){
-//	    			System.out.println(string+" "+entities.get(string).getName() +" "+ entities.get(string).getType() );
 	    			Iterator<String> strings = info.getValue().iterator();
 			    	while (strings.hasNext()) {
 			    		
 						String s= strings.next();
 						
-//						System.out.println("Type: " + info.getKey() + "  Value: "+ string);
-						
 						Element e = doc.createElement(info.getKey());
-						//String[] attr = string.split("=");
 						if(!string.substring(0, 5).equals("anon_")){
 							e.setAttribute("rdf:about", s);
 						}
 							
-//						element.setAttribute(info.getKey(), string);
 						superElement.appendChild(e);
-//						System.out.println("super element URI: "+ getURI(element) + " this entity URI: " + entity.getName() + " next entity URI:"+ string);
 					    
 						addEntityToXMLNode(doc, e, entities.get(s), entities);
 					}
-//	    			addEntityToXMLNode(doc, element, entities.get(string), entities);
 	    		}else{
 		    		element.setAttribute("rdf:Description", string);
 		    		superElement.appendChild(element);
@@ -288,6 +272,21 @@ public class Entities {
 	    		superElement.setTextContent(string);
 	    		break;
 	    	}
+	    	case "en:Collection":{
+//	    		String string = info.getValue().get(0).toString();
+//	    		
+//	    		superElement.setTextContent(string);
+	    		superElement.setAttribute("rdf:parseType", "Collection");
+	    		Iterator<String> strings = info.getValue().iterator();
+	    		while(strings.hasNext()){
+	    			String EntityName = strings.next();
+	    			Element element = doc.createElement(entities.get(EntityName).getType());
+	    			superElement.appendChild(element);
+	    			addEntityToXMLNode(doc, element, entities.get(EntityName), entities);
+	    		}
+	    		
+	    		break;
+	    	}
 
 			default:
 				Iterator<String> strings = info.getValue().iterator();
@@ -295,17 +294,15 @@ public class Entities {
 		    		
 					String string= strings.next();
 					
-//					System.out.println("Type: " + info.getKey() + "  Value: "+ string);
-					
+//					System.out.println("key = " + info.getKey());
+//					System.out.println("key = " + info.getKey());
+//					System.out.println("value = " + info.getValue());
 					Element element = doc.createElement(info.getKey());
-					//String[] attr = string.split("=");
-					if(!string.substring(0, 5).equals("anon_")){
+					if(!string.substring(0, 5).equals("anon_")){ 
 						element.setAttribute("rdf:about", string);
 					}
 						
-//					element.setAttribute(info.getKey(), string);
 					superElement.appendChild(element);
-//					System.out.println("super element URI: "+ getURI(element) + " this entity URI: " + entity.getName() + " next entity URI:"+ string);
 				    
 					addEntityToXMLNode(doc, element, entities.get(string), entities);
 				}
@@ -315,6 +312,8 @@ public class Entities {
 
 	    }
 	}
+	
+
 	private String getURI(Element element) {
 		if(element.hasAttribute("rdf:about"))
 			return element.getAttribute("rdf:about");
@@ -329,7 +328,6 @@ public class Entities {
 		try {
 			docBuilder = docFactory.newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	    Document doc = docBuilder.newDocument();
@@ -339,9 +337,9 @@ public class Entities {
 	    //add xml prefix
 	    Entity xml = entities.get("anon_0");
 	    if(xml!=null){
-	    	for(Entry<String, List> entry : xml.getContent().entrySet()){
+	    	for(Entry<String, List<String>> entry : xml.getContent().entrySet()){
 //	    		System.out.println(entry.getKey().toString() +"_"+ entry.getValue().toString());
-		    	rootElement.setAttribute(entry.getKey().toString(), entry.getValue().toString());
+		    	rootElement.setAttribute(entry.getKey().toString(), entry.getValue().get(0));
 		    }
 	    }else{
 	    	System.out.println("XML is null");
@@ -351,7 +349,7 @@ public class Entities {
 	    //add entity
 		
 		for(Entry<String, Entity> entry : entities.entrySet()) {
-		    String entityName = entry.getKey();
+//		    String entityName = entry.getKey();
 		    Entity entity = entry.getValue();
 		    if(!entity.getName().substring(0, 5).equals("anon_") ){
 		    
@@ -360,7 +358,8 @@ public class Entities {
 		    			entity.getType().equals("owl:DatatypeProperty") ||
 		    			entity.getType().equals("owl:Class") ||
 		    			entity.getType().equals("owl:NamedIndividual") ||
-		    			entity.getType().equals("rdf:Description")
+		    			entity.getType().equals("rdf:Description") ||
+		    			entity.getType().equals("owl:Ontology")
 		    			){
 //		    		System.out.println("main node: "+entity.getName() + " " +entity.getName().substring(0, 5));
 		    		Element element = doc.createElement(entity.getType());
@@ -369,7 +368,7 @@ public class Entities {
 			    	addEntityToXMLNode(doc, element, entity, entities);
 	//		    	System.out.println( rootElement.getChildNodes().getLength() );
 		    	}else{
-//		    		System.out.println( "not main node: "+ entity.getName()+" type:"+entity.getType());
+		    		System.out.println( "not main node: "+ entity.getName()+" type:"+entity.getType());
 //		    		System.out.println( entity.getType() == "owl:NamedIndividual");
 //		    		System.out.println( entity.getType().equals("owl:NamedIndividual"));
 		    	}
@@ -378,37 +377,13 @@ public class Entities {
 		    
 		}
 		
-//		TransformerFactory tf = TransformerFactory.newInstance();
-//		Transformer transformer = null;
-//		try {
-//			transformer = tf.newTransformer();
-//		} catch (TransformerConfigurationException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		
-//		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-//		StringWriter writer = new StringWriter();
-//		try {
-//			transformer.transform(new DOMSource(doc), new StreamResult(writer));
-//		} catch (TransformerException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		String output = writer.getBuffer().toString().replaceAll("\n|\r", "");
-////		String output = writer.getBuffer().toString();
-		
-		
 		
 		Transformer transformer = null;
 		try {
 			transformer = TransformerFactory.newInstance().newTransformer();
 		} catch (TransformerConfigurationException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (TransformerFactoryConfigurationError e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -418,7 +393,6 @@ public class Entities {
 		try {
 			transformer.transform(source, result);
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		String xmlString = result.getWriter().toString();
@@ -439,7 +413,7 @@ public class Entities {
 		    // do what you have to do here
 		    // In your case, an other loop.
 
-		    for(Entry<String, List> info : entity.get().entrySet()) {//info means relations or characteritics
+		    for(Entry<String, List<String>> info : entity.get().entrySet()) {//info means relations or characteritics
 		    	body +="\t" + info.getKey() + " ";// + info.getValue() + "\n";
 		    	Iterator<String> strings = info.getValue().iterator();
 		    	if(info.getValue().size()>1){
