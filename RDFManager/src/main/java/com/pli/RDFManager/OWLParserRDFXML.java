@@ -66,12 +66,18 @@ public class OWLParserRDFXML {
 	    //String content = node.getTextContent().replace(" ", "").replace("\n", "");
 		String content = node.getTextContent();
 //		logger.debug( "Node Name: " + node.getNodeName() + " content: " + content );
-
+		logger.debug( "Node Name: " + node.getNodeName());
+		
 		Boolean hasCollection = isCollection(node);
 		if( hasCollection ){
+			logger.debug( "Is collection Node Name: " + node.getNodeName()  );
 			isAnonymous=true;
-			URI = entities.AddAnon(type);
-			collectionEntity = entities.AddCollection();
+			//URI = entities.AddAnon(type);
+			//collectionEntity = entities.AddCollection();
+			//URI = collectionEntity;
+			URI = entities.AddCollection();
+//			logger.debug( "URI: " + URI  );
+//			logger.debug( "collectionEntity: " + collectionEntity  );
 			
 //			entities.addToEntity(getType(superNode), getURI(superNode), collectionEntity, URI, false );
 			//entities.addToEntity(type, URI, "en:Collection", collectionEntity, false );
@@ -86,6 +92,7 @@ public class OWLParserRDFXML {
 //    		logger.debug("Node Name: " + node.getNodeName() + "  URI != NULL");
     		entities.addEntity(type, URI);
     	}
+		
 	    if(content != "" && content.length() != 0 && type != "rdf:RDF" 
 	    		&& !content.contains(" ") && !content.contains("\t")
 	    		&& !hasCollection){
@@ -110,19 +117,21 @@ public class OWLParserRDFXML {
 	    
 	    //finalMessage+= node.getNodeName()+ "  " + content + "\n";
 	    
-	    addAttr( node );
-
+	    addAttr( node, type, URI );
+	    //logger.debug( "Node Name: " + node.getNodeName());
 	    NodeList nodeList = node.getChildNodes();
 	    for (int i = 0; i < nodeList.getLength(); i++) {
 	        Node currentNode = nodeList.item(i);
 	        if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
 	            //calls this method for all the children which is Element
 	        	if(hasCollection){
-	        		printNodeToCollection(currentNode, collectionEntity);
-	        	}if(currentNode.getNodeName().equals("rdfs:comment")){
-	    	    	
+	        		printItemNodeToCollection(currentNode, URI);
+	        	}else if(currentNode.getNodeName().equals("rdfs:comment")){
 	    	    	entities.addToEntity(type, URI, "rdfs:comment", currentNode.getTextContent(), isAnonymous );
-	    	    }else {
+	    	    }else if(currentNode.getNodeName().equals("rdfs:label")){
+	    	    	entities.addToEntity(type, URI, "rdfs:label", currentNode.getTextContent(), isAnonymous );
+	    	    }
+	        	else {
 	        		printNode(currentNode, node, hasCollection);
 	        	}
 	        	
@@ -130,12 +139,12 @@ public class OWLParserRDFXML {
 	    }
 	}
 	
-	private void printNodeToCollection(Node node, String collectionEntity) {
+	private void printItemNodeToCollection(Node itemNode, String collectionEntity) {
 		
-		Boolean hasCollection = isCollection(node);
+		Boolean hasCollection = isCollection(itemNode);
 		boolean isAnonymous;
-		String URI = getURI(node);
-		String type = getType(node);
+		String URI = getURI(itemNode);
+		String type = getType(itemNode);
 		
 		if( hasCollection ){
 			isAnonymous=true;
@@ -145,21 +154,21 @@ public class OWLParserRDFXML {
 		}else if( URI == null ){
     		isAnonymous=true;
     		URI = entities.AddAnon(type);
-			((Element)node).setAttribute("rdf:about",URI);
+			((Element)itemNode).setAttribute("rdf:about",URI);
     	}else{
     		entities.addEntity(type, URI);
     	}
 		
-		addAttr(node);
+		addAttr(itemNode, type, URI);
 		
 		entities.addToEntity( entities.getType(collectionEntity) , collectionEntity , "en:hasItems", URI, false );
 		
-		NodeList nodeList = node.getChildNodes();
+		NodeList nodeList = itemNode.getChildNodes();
 	    for (int i = 0; i < nodeList.getLength(); i++) {
 	        Node currentNode = nodeList.item(i);
 	        if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
 	            //calls this method for all the children which is Element
-	        		printNode(currentNode, node, hasCollection);
+	        		printNode(currentNode, itemNode, hasCollection);
 	        }
 	    }
 		
@@ -201,35 +210,35 @@ public class OWLParserRDFXML {
 	    }
 		return null;
 	}
-	public String addAttr(Node node){
+	public String addAttr(Node node, String type, String URI){
 
-		String URI="";
-		String type = getType(node);
-		Boolean isAnonymous=true;
+//		String URI=EntityURI;
+//		String type = getType(node);
+		Boolean isAnonymous=false;
 		Boolean hasCollection=false;
 		
+//		NamedNodeMap attributesList = node.getAttributes();
+//		for (int j = 0; j < attributesList.getLength(); j++) {
+////		        logger.debug("Attribute: "
+////		                + attributesList.item(j).getNodeName() + " = "
+////		                + attributesList.item(j).getNodeValue());
+////		        finalMessage+= "Attribute: "
+////		                + attributesList.item(j).getNodeName() + " = "
+////		                + attributesList.item(j).getNodeValue()+"\n";
+//		        switch(attributesList.item(j).getNodeName() ){
+//		        	case "rdf:about":{
+//		        		isAnonymous=false;
+//		        		URI=attributesList.item(j).getNodeValue();
+//		        		break;
+//		        	}
+//		       }
+//		}
+//		if(isAnonymous){
+//			//Add to Anonymous entities
+//			URI = entities.AddAnon(type);
+//			((Element)node).setAttribute("rdf:about",URI);
+//		 }
 		NamedNodeMap attributesList = node.getAttributes();
-		for (int j = 0; j < attributesList.getLength(); j++) {
-//		        logger.debug("Attribute: "
-//		                + attributesList.item(j).getNodeName() + " = "
-//		                + attributesList.item(j).getNodeValue());
-//		        finalMessage+= "Attribute: "
-//		                + attributesList.item(j).getNodeName() + " = "
-//		                + attributesList.item(j).getNodeValue()+"\n";
-		        switch(attributesList.item(j).getNodeName() ){
-		        	case "rdf:about":{
-		        		isAnonymous=false;
-		        		URI=attributesList.item(j).getNodeValue();
-		        		break;
-		        	}
-		       }
-		}
-		if(isAnonymous){
-			//Add to Anonymous entities
-			URI = entities.AddAnon(type);
-			((Element)node).setAttribute("rdf:about",URI);
-		 }
-		attributesList = node.getAttributes();
 		for (int j = 0; j < attributesList.getLength(); j++) {
 //			logger.debug("getNodeName "+attributesList.item(j).getNodeName());
 //			logger.debug("Attribute: " + attributesList.item(j).getNodeName() + " value: " + attributesList.item(j).getNodeValue() );

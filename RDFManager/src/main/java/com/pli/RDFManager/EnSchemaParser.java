@@ -86,10 +86,16 @@ public class EnSchemaParser {
 			if(line.length()>15 && line.substring(0,13).replace("\t", "").equals("rdfs:comment") ){
 
 				eConstructor.lastRelationType = "rdfs:comment";
-				entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, line.substring(13,line.length()));
+				entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, line.substring(14,line.length()).replace("\t", ""));
 //				System.out.println("strings: " + line.substring(13,line.length()));
 				
-			}else{
+			}
+			else if (line.length()>15 && line.substring(0,11).replace("\t", "").equals("rdfs:label")){
+//				System.out.println("strings: " + line.substring(11,line.length()));
+				eConstructor.lastRelationType = "rdfs:label";
+				entities.addToEntity(eConstructor.type, eConstructor.name, eConstructor.lastRelationType, line.substring(13,line.length()));
+			}
+			else{
 //				System.out.println("text:" + line);
 				String[] strings = line.substring(0,line.length()).split(" ");
 //				System.out.println("********************************    string: " + line.replace("\t", "") +" strings.length: " + strings.length);

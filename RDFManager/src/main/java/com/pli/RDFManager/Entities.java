@@ -99,6 +99,7 @@ public class Entities {
 		anonEntities.put(EntityName, new Entity(EntityType, EntityName));
 		addEntity(EntityType, EntityName);
 		
+		//System.out.println(EntityName);
 		return EntityName;
 	}
 	public String AddCollection( ){
@@ -106,9 +107,7 @@ public class Entities {
 		String EntityName = "Collection_"+collectionEntities.size();
 		collectionEntities.put(EntityName, new Entity(EntityType, EntityName));
     
-		addEntity(EntityType, EntityName);//
-		
-		
+		addEntity(EntityType, EntityName);
 		
 		return EntityName;
 	}
@@ -232,11 +231,11 @@ public class Entities {
 		    	break;
 	    	}
 	    	case "rdf:parseType":{
-	    		String string = info.getValue().get(0).toString();
-	    		Element element = doc.createElement(entity.getType());
+	    		//String string = info.getValue().get(0).toString();
+	    		//Element element = doc.createElement(entity.getType());
 	    		//element.setAttribute("rdf:parseType", string);
 //	    		addCollectionToXMLNode(doc, element, entity, entities);
-	    		superElement.appendChild(element);
+	    		//superElement.appendChild(element);
 	    		
 	    		break;
 	    	}
@@ -277,13 +276,36 @@ public class Entities {
 //	    		String string = info.getValue().get(0).toString();
 //	    		
 //	    		superElement.setTextContent(string);
+//	    		System.out.println("Collection: ");
 	    		superElement.setAttribute("rdf:parseType", "Collection");
 	    		Iterator<String> strings = info.getValue().iterator();
 	    		while(strings.hasNext()){
 	    			String EntityName = strings.next();
-	    			Element element = doc.createElement(entities.get(EntityName).getType());
-	    			superElement.appendChild(element);
-	    			addEntityToXMLNode(doc, element, entities.get(EntityName), entities);
+//	    			System.out.println( EntityName );
+	    			//Element element = doc.createElement(entities.get(EntityName).getType());
+	    			//superElement.appendChild(element);
+//	    			System.out.println("superElement: " + getType(superElement));
+	    			addEntityToXMLNode(doc, superElement, entities.get(EntityName), entities);
+	    		}
+	    		
+	    		break;
+	    	}
+	    	case "en:hasItems":{
+	    		Iterator<String> strings = info.getValue().iterator();
+	    		while(strings.hasNext()){
+	    			String EntityName = strings.next();
+//	    			Element element = doc.createElement(entities.get(EntityName).getType());
+//	    			superElement.appendChild(element);
+//	    			System.out.println("superElement: " + getURI(superElement) +EntityName);
+//	    			addEntityToXMLNode(doc, element, entities.get(EntityName), entities);
+	    			Element element = doc.createElement("rdf:Description");
+					if(!EntityName.substring(0, 5).equals("anon_")){ 
+						element.setAttribute("rdf:about", EntityName);
+					}
+						
+					superElement.appendChild(element);
+				    
+//					addEntityToXMLNode(doc, element, entities.get(EntityName), entities);
 	    		}
 	    		
 	    		break;
@@ -300,6 +322,18 @@ public class Entities {
 	    		
 	    		break;
 	    	}
+	    	case "rdfs:label":{
+//	    		System.out.println("comment");
+	    		Iterator<String> strings = info.getValue().iterator();
+	    		while(strings.hasNext()){
+	    			String comment = strings.next();
+	    			Element element = doc.createElement("rdfs:label");
+		    		element.setTextContent(comment);
+		    		superElement.appendChild(element);
+	    		}
+	    		
+	    		break;
+	    	}
 			default:
 				Iterator<String> strings = info.getValue().iterator();
 		    	while (strings.hasNext()) {
@@ -310,7 +344,8 @@ public class Entities {
 //					System.out.println("key = " + info.getKey());
 //					System.out.println("value = " + info.getValue());
 					Element element = doc.createElement(info.getKey());
-					if(!string.substring(0, 5).equals("anon_")){ 
+					if(!string.substring(0, 5).equals("anon_") 
+							&& !string.substring(0, 11).equals("Collection_") ){ 
 						element.setAttribute("rdf:about", string);
 					}
 						
