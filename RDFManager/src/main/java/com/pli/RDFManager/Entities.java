@@ -22,6 +22,8 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSSerializer;
 
 
 public class Entities {
@@ -40,12 +42,17 @@ public class Entities {
 		//check whether exist
 		//if so, just add relation and characteristic
 		//if not, add as new one
+		
 		if (!entities.containsKey(EntityName)){
+			
 			entities.put(EntityName, new Entity(EntityType, EntityName));
 		}
 		
 		entities.get(EntityName).Add(Type, Value);
 		
+		if(isValidEntityType(EntityType)){
+			entities.get(EntityName).setType(EntityType);
+		}
 	}
 	public void addToEntity( String EntityType, String EntityName, String Type, String Value, boolean isAnonymous){
 //		if(isAnonymous)
@@ -59,9 +66,47 @@ public class Entities {
 	public void addEntity( String EntityType, String EntityName){
 
 		if (!entities.containsKey(EntityName)){
+			//System.out.println(EntityType + "            ***************************************************************");
+//			if(EntityType == null ){
+//				EntityType = "en:Empty";
+//			} else 
+			if(!isValidEntityType(EntityName)){
+					System.out.println("--------------------------------------------------------------------------------------------------   :" + EntityType);
+					//System.out.println(EntityType.replace("\t", "").replace(" ","").equals("owl:Class"));
+					EntityType = "en:Empty";
+			}
+			
 			entities.put(EntityName, new Entity(EntityType, EntityName));
 		}
 		
+	}
+	
+	public boolean isValidEntityType(String EntityType){
+		if(!EntityType.equals("rdfs:Datatype") 
+				&& !EntityType.equals("owl:ObjectProperty") 
+				&& !EntityType.equals("owl:DatatypeProperty") 
+				&& !EntityType.equals("owl:Class")
+				&& !EntityType.equals("rdfs:seeAlso")
+				&& !EntityType.equals("rdfs:isDefinedBy")
+				&& !EntityType.equals("en:Collection")
+				&& !EntityType.equals("rdf:Property")
+				&& !EntityType.equals("owl:Restriction")
+				&& !EntityType.equals("owl:minCardinality")
+				&& !EntityType.equals("owl:maxCardinality")
+				&& !EntityType.equals("rdf:resource")
+				&& !EntityType.equals("owl:qualifiedCardinality") 
+				&& !EntityType.equals("owl:AnnotationProperty")
+				&& !EntityType.equals("owl:imports")
+				&& !EntityType.equals("rdf:RDF")
+				&& !EntityType.equals("owl:Ontology") ){
+			if(EntityType.substring(0, 3).equals("owl")
+					|| EntityType.substring(0, 3).equals("rdf")
+					|| EntityType.substring(0, 2).equals("en")
+					|| EntityType.substring(0, 4).equals("rdfs")){
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	//Anonymous Class or instance
@@ -139,6 +184,11 @@ public class Entities {
 			EntityName = Name;
 		}
 		
+		public void setType(String type) {
+			// TODO Auto-generated method stub
+			EntityType = type;
+		}
+
 		//Add relation or characteristic to the Entity
 		public boolean Add( String Type, String Value){
 			if(container.containsKey(Type)){
@@ -445,6 +495,10 @@ public class Entities {
 		String xmlString = result.getWriter().toString();
 		
 //		String xmlString = new XMLDocument(doc).toString();
+		
+		/*DOMImplementationLS domImplLS = (DOMImplementationLS) doc.getImplementation();
+		LSSerializer serializer = domImplLS.createLSSerializer();
+		String xmlString = serializer.writeToString( doc.getDocumentElement() );*/
 		return xmlString;
 	}
 

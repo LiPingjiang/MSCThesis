@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Struct;
 
-public class EnSchemaParser {
+public class OWLPaserEnSchemaToRDFXML {
 	
 	public static String pathPrefix = "//home//pli//Desktop//";
 	public static Entities entities = null;
@@ -17,7 +17,7 @@ public class EnSchemaParser {
     {
 		entities = new Entities();
 		String path = pathPrefix + "ontology.enSchema";
-		EnSchemaParser parser = new EnSchemaParser();
+		OWLPaserEnSchemaToRDFXML parser = new OWLPaserEnSchemaToRDFXML();
 		parser.readFromEnSchema(path);
 		parser.printToFile(pathPrefix + "ontologyEN.owl", entities.toRDFXML() );
 //		parser.printToFile(pathPrefix + "ontologyEN.owl", parser.entities.toENSchema() );

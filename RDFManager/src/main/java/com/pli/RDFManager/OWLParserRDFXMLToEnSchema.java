@@ -10,6 +10,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.http.auth.ContextAwareAuthScheme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -19,9 +20,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-public class OWLParserRDFXML {
+import com.google.common.base.CaseFormat;
+
+public class OWLParserRDFXMLToEnSchema {
 	
-	public static Logger logger = LoggerFactory.getLogger(OWLParserRDFXML.class);
+	public static Logger logger = LoggerFactory.getLogger(OWLParserRDFXMLToEnSchema.class);
 	public static String finalMessage = null;  // the EN schema message for communication
 	public static Entities entities;
 	public static String pathPrefix = "//home//pli//Desktop//";
@@ -29,7 +32,7 @@ public class OWLParserRDFXML {
 	
 	public static void main( String[] args )
     {
-		OWLParserRDFXML parser = new OWLParserRDFXML();
+		OWLParserRDFXMLToEnSchema parser = new OWLParserRDFXMLToEnSchema();
 		Document doc = parser.loadRDFXML(pathPrefix + "prime.owl");
 		finalMessage ="";
 		entities = new Entities();
@@ -60,7 +63,8 @@ public class OWLParserRDFXML {
 
 		String collectionEntity = "";
 		String URI = getURI(node);
-		String type = getType(node);
+		String relationType = getType(node);
+		String entityType = getEntityType(relationType);
 		Boolean isAnonymous=false;
 	    
 	    //String content = node.getTextContent().replace(" ", "").replace("\n", "");
@@ -85,20 +89,20 @@ public class OWLParserRDFXML {
 		}else if( URI == null ){
 //			logger.debug("Node Name: " + node.getNodeName() + "  URI == NULL");
     		isAnonymous=true;
-    		URI = entities.AddAnon(type);
+    		URI = entities.AddAnon(entityType);
 //    		logger.debug("Anonymous URL: "+ URI);
 			((Element)node).setAttribute("rdf:about",URI);
     	}else{
 //    		logger.debug("Node Name: " + node.getNodeName() + "  URI != NULL");
-    		entities.addEntity(type, URI);
+    		entities.addEntity(entityType, URI);
     	}
 		
-	    if(content != "" && content.length() != 0 && type != "rdf:RDF" 
+	    if(content != "" && content.length() != 0 && relationType != "rdf:RDF" 
 	    		&& !content.contains(" ") && !content.contains("\t")
 	    		&& !hasCollection){
 //	    	logger.debug("target size "+ content.length() + " content: "+ content);
 	    	
-	    	entities.addToEntity(type, URI, "owl:targetValue", content, false );
+	    	entities.addToEntity(entityType, URI, "owl:targetValue", content, false );
 	    }
 	    
 	    
@@ -111,13 +115,13 @@ public class OWLParserRDFXML {
 //		    	logger.debug( type + " " + URI );
 //	    		entities.addToEntity(getType(superNode), getURI(superNode), "en:hasItems", URI, false );
 	    	}else{
-	    		entities.addToEntity(getType(superNode), getURI(superNode), type, URI, false );
+	    		entities.addToEntity(getType(superNode), getURI(superNode), relationType, URI, false );
 	    	}
     	}
 	    
 	    //finalMessage+= node.getNodeName()+ "  " + content + "\n";
 	    
-	    addAttr( node, type, URI );
+	    addAttr( node, entityType, URI );
 	    //logger.debug( "Node Name: " + node.getNodeName());
 	    NodeList nodeList = node.getChildNodes();
 	    for (int i = 0; i < nodeList.getLength(); i++) {
@@ -127,9 +131,9 @@ public class OWLParserRDFXML {
 	        	if(hasCollection){
 	        		printItemNodeToCollection(currentNode, URI);
 	        	}else if(currentNode.getNodeName().equals("rdfs:comment")){
-	    	    	entities.addToEntity(type, URI, "rdfs:comment", currentNode.getTextContent(), isAnonymous );
+	    	    	entities.addToEntity(relationType, URI, "rdfs:comment", currentNode.getTextContent(), isAnonymous );
 	    	    }else if(currentNode.getNodeName().equals("rdfs:label")){
-	    	    	entities.addToEntity(type, URI, "rdfs:label", currentNode.getTextContent(), isAnonymous );
+	    	    	entities.addToEntity(relationType, URI, "rdfs:label", currentNode.getTextContent(), isAnonymous );
 	    	    }
 	        	else {
 	        		printNode(currentNode, node, hasCollection);
@@ -139,6 +143,49 @@ public class OWLParserRDFXML {
 	    }
 	}
 	
+	private String getEntityType(String relationType) {
+		switch(relationType){
+		case "rdfs:subClassOf":
+			return "owl:Class";
+		case "owl:inverseOf":
+			return "owl:ObjectProperty";
+		case "owl:datatypeComplementOf ":
+			return "rdf:Property";
+		case "rdfs:subPropertyOf":
+			return "rdf:Property";
+//		case "owl:inverseOf ":
+//			return "owl:ObjectProperty";
+//		case "owl:inverseOf ":
+//			return "owl:ObjectProperty";
+//		case "owl:inverseOf ":
+//			return "owl:ObjectProperty";
+//		case "owl:inverseOf ":
+//			return "owl:ObjectProperty";
+			
+		case "owl:disjointWith":
+			return "owl:Class";
+		case "owl:onClass":
+			return "owl:Class";
+		case "owl:equivalentClass":
+			return "owl:Class";
+		case "owl:someValuesFrom":
+			return "rdf:resource";
+		case "owl:allValuesFrom":
+			return "rdf:resource";
+		case "owl:onProperty":
+			return "rdf:Property";
+		case "rdfs:Datatype":
+			return "rdfs:Datatype";
+		case "owl:ObjectProperty":
+			return "owl:ObjectProperty";
+		case "owl:DatatypeProperty":
+			return "owl:DatatypeProperty";
+		case "owl:Class":
+			return "owl:Class";
+		default:
+			return relationType;
+		}
+	}
 	private void printItemNodeToCollection(Node itemNode, String collectionEntity) {
 		
 		Boolean hasCollection = isCollection(itemNode);
