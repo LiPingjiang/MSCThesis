@@ -19,17 +19,22 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.jena.sparql.pfunction.library.container;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
 
+import ch.qos.logback.core.joran.conditional.IfAction;
+import jena.turtle;
+
 
 public class Entities {
 
 	HashMap< String, Entity> entities = new HashMap< String, Entity>();// key = Entity Name, value = Entity Object
 	HashMap< String, Entity> anonEntities = new HashMap< String, Entity>();
+	HashMap< String, Entity> systemAnonEntities = new HashMap< String, Entity>();
 	HashMap< String, Entity> collectionEntities = new HashMap< String, Entity>();
 	HashMap< String, Entity> anotations = new HashMap< String, Entity>();
 	Entities(){
@@ -147,6 +152,18 @@ public class Entities {
 		//System.out.println(EntityName);
 		return EntityName;
 	}
+	
+	public String AddSystemAnon( String EntityType){ // this anonymous class was declared to be [] in the original file
+		
+		String EntityName = "systemAnon_"+systemAnonEntities.size();
+		
+		anonEntities.put(EntityName, new Entity(EntityType, EntityName));
+		addEntity(EntityType, EntityName);
+		
+		//System.out.println(EntityName);
+		return EntityName;
+	}
+	
 	public String AddCollection( ){
 		String EntityType = "en:Collection";
 		String EntityName = "Collection_"+collectionEntities.size();
@@ -197,8 +214,12 @@ public class Entities {
 //					return true;
 //				else
 //					return false;
-				if(!container.get(Type).contains(Value))
+				if(!container.get(Type).contains(Value)){
 					container.get(Type).add(Value);
+				}else if(getType().equals("en:Collection")){
+					container.get(Type).add(Value);
+				}
+					
 			}else {
 				List<String> l = new ArrayList<>();
 				l.add(Value);
@@ -394,10 +415,16 @@ public class Entities {
 //					System.out.println("key = " + info.getKey());
 //					System.out.println("value = " + info.getValue());
 					Element element = doc.createElement(info.getKey());
-					if(!string.substring(0, 5).equals("anon_") 
-							&& !string.substring(0, 11).equals("Collection_") ){ 
-						element.setAttribute("rdf:about", string);
+					if(string.length()>5){
+						if(!string.substring(0, 5).equals("anon_") ){
+							element.setAttribute("rdf:about", string);
+						}
+						if(string.length()>11)
+							if(!string.substring(0, 11).equals("Collection_")){ 
+								element.setAttribute("rdf:about", string);
+							}
 					}
+					
 						
 					superElement.appendChild(element);
 				    
@@ -456,7 +483,8 @@ public class Entities {
 		    			entity.getType().equals("owl:Class") ||
 		    			entity.getType().equals("owl:NamedIndividual") ||
 		    			entity.getType().equals("rdf:Description") ||
-		    			entity.getType().equals("owl:Ontology")
+		    			entity.getType().equals("owl:Ontology") ||
+		    			entity.getType().equals("owl:AnnotationProperty")
 		    			){
 //		    		System.out.println("main node: "+entity.getName() + " " +entity.getName().substring(0, 5));
 		    		Element element = doc.createElement(entity.getType());
@@ -515,17 +543,18 @@ public class Entities {
 		    // In your case, an other loop.
 
 		    for(Entry<String, List<String>> info : entity.get().entrySet()) {//info means relations or characteritics
-		    	body +="\t" + info.getKey() + " ";// + info.getValue() + "\n";
+//		    	body +="\t" + info.getKey() + " ";// + info.getValue() + "\n";
 		    	Iterator<String> strings = info.getValue().iterator();
-		    	if(info.getValue().size()>1){
-		    		indentation="\t\t";
-		    		String string= strings.next();
-					body += string + "\n";
-		    	}
+//		    	if(info.getValue().size()>1){
+//		    		indentation="\t\t";
+//		    		String string= strings.next();
+//					body += string + "\n";
+//		    	}
 		    	while (strings.hasNext()) {
 					String string= strings.next();
-					body += indentation + string + "\n";
-					
+//					body += indentation + string + "\n";
+
+					body +="\t" + info.getKey() + " " + string + "\n";// + info.getValue() + "\n";
 				}
 		    	if(info.getValue().size()>1)
 		    		indentation="\t";
@@ -538,5 +567,242 @@ public class Entities {
 		return result;
 		
 	}
+
+	public void deduplication() {
+		System.out.println("entities original size: " + entities.size());
+		HashMap< String, List<String> > fatherNodes = new HashMap<>(); //Entity Name, Father Node List
+		List<String> reminderEntities = new ArrayList<String>();
+		List<String> leavesEntities = new ArrayList<String>();
+		List<String> removedEntities = new ArrayList<String>();
+		
+		//Add all entity to reminderEntities
+		for(Entry<String, Entity> entity:entities.entrySet()){
+			
+			//only check anonymous class
+			//other wise, nurse(human),doctor(human) will be merged
+			if( entity.getKey().length() > 5 )
+			{
+				if( entity.getKey().substring(0, 5).equals("anon_") )
+				{
+					reminderEntities.add(entity.getKey());
+				}
+			}
+			
+			
+			//System.out.println("reminder : " + entity.getKey());
+			//Father HashMap
+			for(Entry<String, List<String>>  relation:  entity.getValue().getContent().entrySet()){
+				for(Iterator<String> subEn = relation.getValue().iterator(); subEn.hasNext(); ){
+					String subURI = subEn.next();
+					String fathURI = entity.getKey();
+					
+					if(fatherNodes.containsKey(subURI)){
+						if(!fatherNodes.get(subURI).contains(fathURI)){
+							fatherNodes.get(subURI).add(fathURI);
+							//System.out.println("father: " + entity.getKey() + " sub node: " + subURI);
+						}
+					}else{
+						List<String> subs = new ArrayList<String>();
+						subs.add(fathURI);
+						fatherNodes.put(subURI, subs);
+					}
+				}
+			}
+		}
+		//System.out.println("equal " + reminderEntities.contains("http://purl.oclc.org/NET/ssnx/ssn"));
+		//System.out.println("equal " + reminderEntities.indexOf("http://purl.oclc.org/NET/ssnx/ssn"));
+		
+		
+		//select leaves entities to leavesEntities and check duplication
+		while( !reminderEntities.isEmpty() ){
+			System.out.println("not empty " + reminderEntities.size());
+			leavesEntities.clear();
+			for(Iterator<String> uriIter = reminderEntities.iterator(); uriIter.hasNext(); ) {
+				Boolean isLeaf=true;
+			    String uri = uriIter.next();
+			    for(Entry<String, List<String>> subEntity:entities.get(uri).container.entrySet()){
+			    	for(Iterator<String> u = subEntity.getValue().iterator(); u.hasNext() && !subEntity.getKey().equals("owl:targetValue") ; ) {
+			    		String subU = u.next() ;
+			    		//if could find relation entity in reminder array, then it is not leaf
+			    		if(reminderEntities.contains(subU)  ){
+			    			//System.out.println(subU);
+			    			isLeaf=false;
+			    		}
+			    	}
+			    }
+			    if(isLeaf){
+			    	leavesEntities.add(uri);
+			    	
+			    }
+			}
+			//remove leaves from reminder
+			Iterator<String> leaves = leavesEntities.iterator();
+			while (leaves.hasNext()) {
+			   String leaf = leaves.next(); // must be called before you can call i.remove()
+			   reminderEntities.remove(leaf);
+			}
+			//check all entities in leavesEntities
+			
+			for(int i = 0; i < leavesEntities.size(); i++ ) {
+				String currentEntity = leavesEntities.get(i);
+				
+				if(removedEntities.contains(currentEntity)){
+					//System.out.println("contains");
+					continue;
+				}
+					
+				
+				for(int j = i+1; j < leavesEntities.size(); j++ ) {
+					String compareEntity = leavesEntities.get(j);
+					//System.out.println("currentEntity: " + currentEntity + " compareEntity: " + compareEntity);
+					//check whether two entity has the same amount of properties with same URI
+					Entity curEn = entities.get(currentEntity);
+					Entity cmpEn = entities.get(compareEntity);
+					//System.out.println("currentEntity: " + curEn.getContent().size());
+					//System.out.println("compareEntity: " + cmpEn.getContent().size());
+					if(curEn.getContent().size()!=cmpEn.getContent().size() ){
+						break;// not same
+					}else{
+						for(Entry<String, List<String>> realation : curEn.getContent().entrySet()){
+							if( !cmpEn.getContent().containsKey(realation.getKey())){
+								break;// not same
+							}else {
+								if( !cmpEn.getContent().get(realation.getKey()).equals(realation.getValue())){
+									break;// not same
+								}else{
+									//same
+									removedEntities.add(compareEntity);
+									//Substitute cmpEn with curEn on father nodes
+									for(Iterator<String> fatherIter = fatherNodes.get(compareEntity).iterator(); fatherIter.hasNext(); ) {
+										String fatherURI = fatherIter.next();
+										//System.out.println("father uri: " + fatherURI);
+										Entity father = entities.get( fatherURI );
+										for(Entry<String, List<String>> re: father.getContent().entrySet()){
+											if(re.getValue().contains(compareEntity)){
+												re.getValue().remove(compareEntity);
+												re.getValue().add(currentEntity);
+											}
+										}
+										
+									}
+									
+									//remove from entities
+									//leavesEntities.remove(compareEntity);
+									//entities.remove(compareEntity);
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			//remove from entities
+			//leavesEntities.remove(compareEntity);
+			Iterator<String>  removes = removedEntities.iterator();
+			while (removes.hasNext()) {
+			   String remove = removes.next(); // must be called before you can call i.remove()
+			   entities.remove(remove);
+			}
+			
+			//entities.remove(compareEntity);
+		}
+		
+		System.out.println("entities final size: " + entities.size());
+		
+		
+	}
+
+	public String toTurtle( String ontoInfo) {
+
+		String tString=ontoInfo + "\n";
+		
+		for(Entry<String, Entity> entry : entities.entrySet()) {
+			
+			//object
+		    Entity entity = entry.getValue();
+		    if(entity.getName().contains("systemAnon_")){
+	    		tString += "[] ";
+	    	}else if( entity.getName().contains("anon_") ){
+		    	//tString += entity.getName() + " ";
+	    		continue;
+		    }else if( entity.getName().contains("Collection_") ){
+		    	continue;
+		    }else{
+		    	tString += entity.getName() + " ";
+		    }
+		    
+		    //relations
+		    for(Entry<String, List<String>> info : entity.get().entrySet()) {//info means relations or characteritics
+		    	//tString += info.getKey() + " ";
+		    	
+		    	for (final String name : info.getValue()) {
+		    		if(name.contains("anon_")){
+		    			tString += info.getKey() + " " + turtlePrintAnonymousClass(name);
+		    		}else if(name.contains("Collection_")){
+		    			tString += info.getKey() + " " + turtlePrintCollection(name) ;
+		    		}else {
+		    			tString += info.getKey() + " " + name;
+					}
+		    		tString +=  " ;\n";
+		    	}
+		    	
+		    	
+		    	
+		    }
+		    tString = tString.substring(0,tString.length()-2);
+		    //tString.substring(0,tString.length()-4);
+		    tString += " .\n";
+		    
+		}
+
+		
+		
+		return tString;
+	}
+
+	private String turtlePrintCollection(String collectionName) {
+		String collection = "( ";
+		Entity entity = entities.get(collectionName);
+		
+		for(Entry<String, List<String>> info : entity.get().entrySet()) {//info means relations or characteritics
+			for (final String name : info.getValue()) {
+	    		if(name.contains("anon_")){
+	    			collection += turtlePrintAnonymousClass(name) + " " ;
+	    		}else {
+	    			collection += name + " ";
+				}
+	    	}
+		}
+		collection+= ")" ;
+		
+		return collection;
+	}
+
+	private String turtlePrintAnonymousClass(String entityName) {
+		String anonymous = "[ ";
+		Entity entity = entities.get(entityName);
+		
+		//relations
+		
+	    for(Entry<String, List<String>> info : entity.get().entrySet()) {//info means relations or characteritics
+	    	
+	    	for (final String name : info.getValue()) {
+	    		if(name.contains("anon_")){
+	    			anonymous += info.getKey() + " " + turtlePrintAnonymousClass(name) + " ;\n" ;
+	    		}else if(name.contains("Collection_")){
+	    			anonymous += info.getKey() + " " + turtlePrintCollection(name) + " ;\n" ;
+	    		}else {
+	    			anonymous += info.getKey() + " " + name + " ;\n";
+				}
+	    	}
+
+	    }
+	    
+	    anonymous = anonymous.substring(0,anonymous.length()-2);
+	    
+	    anonymous += " ]";
+		return anonymous;
+	}
+
 	
 }

@@ -19,10 +19,12 @@ public class OWLPaserEnSchemaToRDFXML {
 		String path = pathPrefix + "ontology.enSchema";
 		OWLPaserEnSchemaToRDFXML parser = new OWLPaserEnSchemaToRDFXML();
 		parser.readFromEnSchema(path);
+		
 		parser.printToFile(pathPrefix + "ontologyEN.owl", entities.toRDFXML() );
 //		parser.printToFile(pathPrefix + "ontologyEN.owl", parser.entities.toENSchema() );
     }
 	
+
 	public void readFromEnSchema(String path){
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(path))) {

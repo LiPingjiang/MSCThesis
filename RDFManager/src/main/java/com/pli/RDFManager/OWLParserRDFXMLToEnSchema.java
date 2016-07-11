@@ -28,22 +28,35 @@ public class OWLParserRDFXMLToEnSchema {
 	public static String finalMessage = null;  // the EN schema message for communication
 	public static Entities entities;
 	public static String pathPrefix = "//home//pli//Desktop//";
+	
 
 	
 	public static void main( String[] args )
     {
 		OWLParserRDFXMLToEnSchema parser = new OWLParserRDFXMLToEnSchema();
-		Document doc = parser.loadRDFXML(pathPrefix + "prime.owl");
+		//Document doc = parser.loadRDFXML(pathPrefix + "prime.owl");
+		Document doc = parser.loadRDFXML(parser.testOntology(1));
 		finalMessage ="";
 		entities = new Entities();
 		
 //		NodeList nodeList = doc.getChildNodes();
 		parser.printNode(doc.getDocumentElement(), null,false);
-		
+		entities.deduplication();
 //		parser.printToFile(pathPrefix + "ontology.enSchema", finalMessage);
 		parser.printToFile(pathPrefix + "ontology.enSchema", entities.toENSchema() );
 //		parser.printToFile(pathPrefix + "ontology2.enSchema", entities.toRDFXML() );
 		
+	}
+	private String testOntology(int i) {
+		switch (i) {
+		case 1:
+			return getClass().getClassLoader().getResource("ont_test_Advanced_Datatypes.owl").getPath();
+			//return "ont_test_Advanced_Datatypes.owl";
+
+		default:
+			break;
+		}
+		return null;
 	}
 	public void printToFile(String path, String data){
 		PrintWriter out = null;
