@@ -96,7 +96,7 @@ public class App
 				break;
 			}
 			case "Linux":{
-				path = "/home/"+System.getProperty("user.name");
+				path = "/home/"+System.getProperty("user.name")+"/Desktop";
 				break;
 			}
 		}
