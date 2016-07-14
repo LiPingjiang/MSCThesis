@@ -36,6 +36,7 @@ public class TurtleToEnSchema {
 		parser.printToFile(pathPrefix + "ontology.enSchema", entities.toENSchema() );
 //		parser.printToFile(pathPrefix + "ontology2.enSchema", entities.toRDFXML() );
 		System.out.println("enschema");
+		//System.out.println(entities.toTurtle( parser.ontInfo) );
 		parser.printToFile(pathPrefix + "ontology.turtle", entities.toTurtle( parser.ontInfo) );
 		
 	}
@@ -46,11 +47,14 @@ public class TurtleToEnSchema {
 		    String line;
 		    while ((line = br.readLine()) != null) {
 		    	// process the line.
-		    	if(line.replace(" ", "").replace("\t", "").length()==0){
+		    	if(line.replace(" ", "").replace("\t", "").length()==0
+		    			|| line.subSequence(0, 1).equals("#") ){//skip empty and comment line
 		    		continue;
 		    	}
 		    	if(!isEntities){
-		    		if(line.subSequence(0, 1).equals(":") || line.subSequence(0, 2).equals("[]")){
+		    		if(line.subSequence(0, 1).equals(":") 
+		    				|| line.subSequence(0, 2).equals("[]")
+		    				|| line.subSequence(0, 1).equals("<")){
 		    			isEntities = true;
 		    		}else{
 		    			ontInfo = ontInfo + line + "\n";
@@ -71,6 +75,17 @@ public class TurtleToEnSchema {
 		    				if(string.length()>1 && string.contains(";")){
 								itemList.add(string.substring(0, string.length()-2));
 								itemList.add(";");
+							}else if(string.length()>1 && string.contains(",")){
+									
+								String[] objectLists = string.split(",");
+								for (int i = 0 ; i<objectLists.length;i++) {
+									
+									itemList.add(objectLists[i]);
+									if(i<objectLists.length-1 || i==0){
+										itemList.add(",");
+									}
+								}
+								
 							}else if(string.contains("\"")){
 
 								if(StringUtils.countMatches(string,"\"") == 2){
@@ -130,9 +145,7 @@ public class TurtleToEnSchema {
 		
 		do {
 			String predicate = itemList.get(index);
-			
-			String subjectName = itemList.get(++index);
-			
+
 			//System.out.println("index: "+index+ " Object: " + objectName + " Predicate: "+ predicate + " Subject: "+ subjectName);
 			
 			//check Object
@@ -140,21 +153,24 @@ public class TurtleToEnSchema {
 				objectName = entities.AddSystemAnon("en:Entity");
 				objectIsAnonymou = true;
 			}
+			do{// subject list
+				String subjectName = itemList.get(++index);
+				//process subject
+				if(subjectName.equals("[")){
+					subjectName = entities.AddAnon("en:Entity");
+					entities.addToEntity(objectType, objectName, predicate, subjectName);
+					
+					index = processAnonymousSubject(index, "en:Entity",objectName, subjectName);
+				}else if(subjectName.equals("(")){
+					subjectName = entities.AddCollection();
+					index = processCollectionSubject(index, subjectName);
+					entities.addToEntity(  objectType, objectName, predicate, subjectName);
+				}else{
+					entities.addToEntity(  objectType, objectName, predicate, subjectName);
+					index ++;
+				}
+			}while(itemList.get(index).equals(","));
 			
-			//process subject
-			if(subjectName.equals("[")){
-				subjectName = entities.AddAnon("en:Entity");
-				entities.addToEntity(objectType, objectName, predicate, subjectName);
-				
-				index = processAnonymousSubject(index, "en:Entity",objectName, subjectName);
-			}else if(subjectName.equals("(")){
-				subjectName = entities.AddCollection();
-				index = processCollectionSubject(index, subjectName);
-				entities.addToEntity(  objectType, objectName, predicate, subjectName);
-			}else{
-				entities.addToEntity(  objectType, objectName, predicate, subjectName);
-				index ++;
-			}
 			
 			if(itemList.get(index).equals(";")){
 				index ++;
