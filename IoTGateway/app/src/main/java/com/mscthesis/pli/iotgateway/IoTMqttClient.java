@@ -1,5 +1,7 @@
 package com.mscthesis.pli.iotgateway;
 
+import android.util.Log;
+
 import java.util.Date;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -61,13 +63,13 @@ public class IoTMqttClient implements MqttCallback{
 	
 	public void publish(String pubMsg){
 
-   		int pubQoS = 0;
+   		int pubQoS = 2;
 		MqttMessage message = new MqttMessage(pubMsg.getBytes());
     	message.setQos(pubQoS);
     	message.setRetained(false);
 
     	// Publish the message
-    	System.out.println("Publishing to topic \"" + topic + "\" qos " + pubQoS);
+		Log.d("IoTTimer","Publishing to topic \"" + topic + "\" qos " + pubQoS);
     	MqttDeliveryToken token = null;
     	startTime=new Date();
     	try {
@@ -75,6 +77,7 @@ public class IoTMqttClient implements MqttCallback{
 			token = topic.publish(message);
 	    	// Wait until the message has been delivered to the broker
 			token.waitForCompletion();
+			Log.d("IoTTimer", "token finish.");
 //			Thread.sleep(100);
 		} catch (Exception e) {
 			e.printStackTrace();

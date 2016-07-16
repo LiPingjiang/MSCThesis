@@ -1,7 +1,6 @@
 package com.mscthesis.pli.iotgateway;
 
 
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.net.Uri;
@@ -9,7 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -19,30 +17,35 @@ import android.widget.TextView;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.hp.hpl.jena.rdf.model.InfModel;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.NodeIterator;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.vocabulary.RDF;
+import com.mscthesis.pli.iotgateway.EN.ENPaser;
 
-import org.slf4j.LoggerFactory;
+import org.apache.commons.io.IOUtils;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.net.URL;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 
@@ -50,32 +53,39 @@ public class MainActivity extends AppCompatActivity {
 
     static long transmissionTime;
 
-    static long reasonTime;
+
     public TextView informationView;
     public TextView statusView;
-    public TextView resultView;
     public TextView tv_reasoningTime;
     public TextView tv_transmissionTime;
     public Button resetButton;
+    public Button rdfReasoning;
+    public Button jsonReasoning;
+    public Button n3Reasoning;
+    public Button enReasoning;
+    public Button enSchemaReasoning;
+    public Button sendToMqtt;
     BroadcastReceiver receiver;
     //private CoapServer server;
     public static MainActivity instance;
     int requestNumber = 0;
     static int finishNumber = 0;
+    static long reasonTime;
+    static long totalSendTime;
     boolean isExisting = false; //is another service exist, if exist , do not start new one as they listen to the same port
     static String httpURI = "tcp://ec2-52-58-177-76.eu-central-1.compute.amazonaws.com:1883";
     static Handler handler = new Handler();
-    static String resultModel;
     static byte[] lockAdd = new byte[0];
-    static byte[] lockPool = new byte[0];
     static Queue rdfArray;
-    static int reasoningThreads;
+    static Queue sendArray;
+
+
     static int MaxThreads = 1;
     //socket
     private ServerSocket serverSocket;
     Thread serverThread = null;
     public static final int SERVERPORT = 6000;
-    Handler updateConversationHandler;
+    //Handler updateConversationHandler;
 
 
 
@@ -92,10 +102,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+        totalSendTime = 0;
         reasonTime = 0;
         transmissionTime = 0;
         rdfArray =  new LinkedList();
-        reasoningThreads = 0;
+        sendArray  =  new LinkedList();
+
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -107,22 +119,91 @@ public class MainActivity extends AppCompatActivity {
 
         informationView = (TextView) findViewById(R.id.Infomation);
         statusView = (TextView) findViewById(R.id.tv_status);
-        resultView = (TextView) findViewById(R.id.Result);
         tv_reasoningTime = (TextView) findViewById(R.id.tv_reasoningTime);
         tv_transmissionTime = (TextView) findViewById(R.id.tv_transmissionTime);
 
-        resultView.setMovementMethod(new ScrollingMovementMethod());
+        rdfReasoning = (Button) findViewById(R.id.bt_rdfReasoning);
+        jsonReasoning = (Button) findViewById(R.id.bt_jsonReasoning);
+        n3Reasoning = (Button) findViewById(R.id.bt_n3Reasoning);
+        enReasoning = (Button) findViewById(R.id.bt_enReasoning);
+        enSchemaReasoning = (Button) findViewById(R.id.bt_enSchemaReasoning);
+        sendToMqtt = (Button) findViewById(R.id.bt_send);
+
+        rdfReasoning.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+                        ReasonThread thread = new ReasonThread("RDF/XML");
+                        thread.start();
+                    }
+                }
+        );
+        jsonReasoning.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+                        ReasonThread thread = new ReasonThread("JSON-LD");
+                        thread.start();
+                    }
+                }
+        );
+        n3Reasoning.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+                        ReasonThread thread = new ReasonThread("N-TRIPLE");
+                        thread.start();
+                    }
+                }
+        );
+        enReasoning.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+                        ReasonThread thread = new ReasonThread("EN");
+                        thread.start();
+                    }
+                }
+        );
+
+        enSchemaReasoning.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+                        ReasonThread thread = new ReasonThread("EN_SCHEMA");
+                        thread.start();
+                    }
+                }
+        );
+        sendToMqtt.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+
+                        Date startTime = new Date();
+                        while ( !sendArray.isEmpty()){
+                            String data = (String) sendArray.poll();
+
+                            IoTMqttClient ioTMqttClient = new IoTMqttClient(httpURI,"IoTReasoning","gateway");
+                            ioTMqttClient.publish(data);
+                        }
+                        totalSendTime = new Date().getTime() -startTime.getTime();
+                        handler.post(new Runnable() {
+                            public void run() {
+                                instance.tv_reasoningTime.setText("Reasoning time: "+reasonTime + " ,total send Time: "+ totalSendTime);
+                            }
+                        });
+                    }
+                }
+        );
+
+
         resetButton = (Button) findViewById(R.id.bt_reset);
         resetButton.setOnClickListener(
                 new View.OnClickListener() {
                     public void onClick(View v) {
                         reasonTime = 0;
+                        finishNumber = 0;
                         requestNumber = 0;
                         transmissionTime = 0;
+                        rdfArray =  new LinkedList();
+                        sendArray  =  new LinkedList();
                         statusView.setText("Reset the gateway, waiting for new reasoning tasks.");
-                        resultView.setText("Reasoning result has been cleaned.");
                         changehttpURI( ((EditText) findViewById(R.id.et_hostip)).getText().toString() );
-                        MaxThreads = Integer.parseInt( ((EditText) findViewById(R.id.et_threadNumber)).getText().toString() );
                     }
                 }
         );
@@ -130,8 +211,8 @@ public class MainActivity extends AppCompatActivity {
         informationView.setText("IP Address: " + getLocalIpAddress());
 
         //socket
-        updateConversationHandler = new Handler();
-        this.serverThread = new Thread(new ServerThread());
+        //updateConversationHandler = new Handler();
+        this.serverThread = new Thread(new SocketServerThread());
         this.serverThread.start();
 
 
@@ -150,11 +231,6 @@ public class MainActivity extends AppCompatActivity {
                 new IntentFilter(IoTResource.BROADCAST_RECEIVE)
         );
 
-        //initServer();
-//        if (!isExisting) {
-//            server.start();
-//            isExisting = true;
-//        }
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         Action viewAction = Action.newAction(
@@ -178,15 +254,6 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-//    private void initServer() {
-//        if (server == null) {
-//            server = new Coap(new IoTResource());
-////            for (Integer port : ports) {
-////                server.addEndpoint(new CoapEndpoint(createDtlsConnector(port), NetworkConfig.getStandard()));
-////            }
-//        }
-//    }
-
     public void changehttpURI( String address){
         httpURI="tcp://"+address+":1883";
     }
@@ -196,19 +263,20 @@ public class MainActivity extends AppCompatActivity {
         Log.d("IoTTimer", "reasoning time: " + reasonTime);
         handler.post(new Runnable() {
             public void run() {
-                instance.tv_reasoningTime.setText("Reasoning time: "+reasonTime);
+                instance.tv_reasoningTime.setText("Reasoning time: "+reasonTime + " ,total send Time: "+ totalSendTime);
+                updateStatusView();
             }
         });
     }
 
     public static void transmissionTimeIncrease(long time) {
         transmissionTime += time;
-        Log.d("IoTTimer", "transmission time: " + transmissionTime);
-        handler.post(new Runnable() {
-            public void run() {
-                instance.tv_transmissionTime.setText("Transmission to server time: "+transmissionTime);
-            }
-        });
+        //Log.d("IoTTimer", "transmission time: " + transmissionTime);
+        //handler.post(new Runnable() {
+        //    public void run() {
+        //        instance.tv_transmissionTime.setText("Transmission to server time: "+transmissionTime);
+        //    }
+        //});
     }
 
 
@@ -270,15 +338,7 @@ public class MainActivity extends AppCompatActivity {
     public static void updateStatusView(){
         handler.post(new Runnable() {
             public void run() {
-                ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
-                ActivityManager activityManager = (ActivityManager) instance.getSystemService(ACTIVITY_SERVICE);
-                activityManager.getMemoryInfo(mi);
-
-                String text = "Receive " + instance.requestNumber + " request(s)." + " Finished: "+ finishNumber+ "\n" +
-                        "**************************************************\n" +
-                        "Gateway status: Used CPU " + instance.readCPUUsage() + " Available Memory: " + mi.availMem / 1024 / 1024 + "\n" +
-
-                        "**************************************************\n";
+                String text = "Receive " + instance.requestNumber + " request(s)." + " Finished: "+ finishNumber+ "\n";
                 instance.statusView.setText(text);
             }
         });
@@ -290,181 +350,409 @@ public class MainActivity extends AppCompatActivity {
             updateStatusView();
             rdfArray.add(data);
         }
-
-        reasoning();
-    }
-    public static void reasoning() {
-
-        //Log.d("IoTReasoner", " public static void reasoning(String data){" );
-        //if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() )
-        String data="";
-        synchronized (lockPool){
-            if( !rdfArray.isEmpty() && (reasoningThreads < MaxThreads) )
-            {
-                reasoningThreads++; // a new thread is running reasoning
-                Log.d("IoTReasoner", "current thread: "+ reasoningThreads + " max thread: "+ reasoningThreads );
-                data = (String) rdfArray.poll();
-                ReasonThread thread = new ReasonThread(data);
-                thread.start();
-                //instance.statusView.setText(instance.statusView.getText()+"\n"+instance.intent.getStringExtra(IoTResource.RDF_DATA));
-            }
-        }
-
-
-//        final String rdfData = data;
-//        //Use thread to reasoning
-//
-//        new Thread(new Runnable() {
-//            public void run() {
-//                Date startTime = new Date();
-//                Log.d("IoTReasoner", "Start reasoning.");
-//                IoTReasoner ioTReasoner;
-//                ioTReasoner = new IoTReasoner();
-//                ioTReasoner.setDataFormat("RDF/XML");
-//
-//                Model model = ModelFactory.createDefaultModel();
-//                StringReader reader = new StringReader(rdfData);
-//                model.read(reader, null, "RDF/XML");
-//                ioTReasoner.setDataModel(model);
-//
-//        //                    Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
-//                InfModel infModel = ioTReasoner.inferAndGetResult();
-//                Log.d("IoTReasoner", "Finish reasoning.");
-//                Date reasoningFinishTime = new Date();
-//                MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
-//                //send to cloud
-//                //MQTTclient_pub client = new MQTTclient_pub( httpURI,"IoTReasoning",getLocalIpAddress() );
-//                //client.publish(rdfData);//change to model
-//                //merge the original rdf model and infered model together
-//
-//                //update UI
-//        //                            resultModel = infermodel.toString();
-//                //StringWriter inferOut = new StringWriter();
-//                //infModel.write(inferOut, "TURTLE");
-//                        /*resultModel = inferOut.toString();
-//
-//                        handler.post(new Runnable() {
-//                            public void run() {
-//                                instance.resultView.setText(
-//                                        instance.resultView.getText()+
-//                                                "\n****************************************\n"
-//                                                +resultModel);
-//                            }
-//                        });*/
-//
-//        //                    final Model union = ModelFactory.createUnion(model, infermodel);
-//                StringWriter out = new StringWriter();
-//                infModel.write(out, "RDF/XML");
-//                //client.publish(out.toString());
-//                IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway");
-//                Mclient.publish(out.toString());
-//                reasoningThreads--;
-//                finishNumber++;
-//                updateStatusView();
-//                if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
-//                    reasoning();
-//                }
-//            }
-//        }).start();
     }
 
 
     static public class ReasonThread extends Thread
     {
-        private String rdfData;
-        public ReasonThread(String rdf)
+        private String dataFormat;
+        public ReasonThread(String dataFormat)
         {
-            this.rdfData = rdf;
+            this.dataFormat = dataFormat;
         }
         public void run()
         {
-            Date startTime = new Date();
-            Log.d("IoTReasoner", "Start reasoning.");
-            IoTReasoner ioTReasoner;
-            ioTReasoner = new IoTReasoner();
-            ioTReasoner.setDataFormat("RDF/XML");
+            IoTReasoner ioTReasoner  = null;
 
+            if(dataFormat.equals("EN_SCHEMA")){
+                //fetch schema from cloud server
+                String ontoInfo="";
+                String enSchema="";
+                // php connection
+//                ontoInfo = "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n" +
+//                        "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n" +
+//                        "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n" +
+//                        "\n" +
+//                        "<http://localhost/SensorSchema/ontology> a owl:Ontology .";
+//                enSchema = "<en:Entity <obs:HighAcceleration>\n" +
+//                        "\ta owl:Class\n" +
+//                        "\trdfs:subClassOf <obs:Event>\n" +
+//                        "\trdfs:comment \"\"^^xsd:string\n" +
+//                        ">\n" +
+//                        "<en:Entity <obs:HighDeacceleration>\n" +
+//                        "\ta owl:Class\n" +
+//                        "\trdfs:subClassOf <obs:Event>\n" +
+//                        ">\n" +
+//                        "<en:Entity <obs:Event>\n" +
+//                        "\ta owl:Class\n" +
+//                        ">";//ontology
+
+                try {
+                    ontoInfo= getOntology("http://vm0104.virtues.fi/testing/httprequest/ontology.php?ONTOTYPE=INFO");
+                    enSchema= getOntology("http://vm0104.virtues.fi/testing/httprequest/ontology.php?ONTOTYPE=ONTOLOGY");
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+//                Log.d("HTTPREQUEST","FINISHI" );
+                //convert enSchema to turtle
+
+                ENPaser parser = new ENPaser();
+                parser.readENString(enSchema);
+                //Log.d("HTTPREQUEST","turtle: " + parser.toTurtle("") );
+                ioTReasoner = new IoTReasoner(parser.toTurtle(ontoInfo));
+                ioTReasoner.setDataFormat("TURTLE");
+
+            }else{
+                ioTReasoner = new IoTReasoner();
+                ioTReasoner.setDataFormat(dataFormat);
+
+            }
+
+
+
+            while( !rdfArray.isEmpty())
+            {
+
+                String data = (String) rdfArray.poll();
+                Model model = getModelFromString(data,dataFormat);
+                Model localModel = ModelFactory.createDefaultModel();
+                Model sendModel = ModelFactory.createDefaultModel();
+                //Model localModel = getModelFromString(data,dataFormat);
+                //Model sendModel = getModelFromString(data,dataFormat);
+
+                StmtIterator  stas = model.listStatements();
+                while(stas.hasNext()){
+
+                    Statement sta = stas.next();
+
+                    if( sta.getObject().isLiteral() ){
+                        if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasID" ) ){
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasArea" ) ) {
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasLatitude" ) ){
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasLongitude" ) ){
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasVelocity" ) ){
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDirection" ) ){
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasSender" ) ){
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDate" ) ){
+                            sendModel.add(sta);
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDateTime" ) ){
+                            //do nothing
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDistance" ) ){
+                            //do nothing
+                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasAcceleration" ) ){
+                            localModel.add(sta);
+                        }else{
+                            Log.d("IoTReasoner","sta: "+sta.toString() );
+                            localModel.add(sta);
+                            sendModel.add(sta);
+                        }
+
+                    }else{
+                        //Log.d("IoTReasoner","sta: "+sta.toString() );
+                        localModel.add(sta);
+                        sendModel.add(sta);
+                    }
+                }
+                //.d("IoTReasoner", "localmodel"+localModel.toString());
+                //Log.d("IoTReasoner", "sendModel"+sendModel.toString());
+                /*
+                StmtIterator  stas = localModel.listStatements();
+
+                while(stas.hasNext()){
+                    Statement sta = stas.next();
+                    if( sta.getObject().isLiteral() ){
+                        if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasID" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasArea" ) ) {
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasLatitude" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasLongitude" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasVelocity" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDirection" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasSender" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDate" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDateTime" ) ){
+                            sta.remove();
+                        }else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDistance" ) ){
+                            sta.remove();
+                        }
+
+                    }
+                }
+                stas = sendModel.listStatements();
+                while(stas.hasNext()){
+
+                    Statement sta = stas.next();
+
+                    if( sta.getObject().isLiteral() ){
+                        if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDistance" ) ){
+                            sta.remove();
+                        }
+
+                    }
+                }
+                */
+
+                Date startTime = new Date();
+
+                ioTReasoner.setDataModel(localModel);
+
+                //InfModel infModel = ioTReasoner.inferAndGetResult();
+                //ioTReasoner.inferModel(false);
+                ioTReasoner.inferAndGetResult();
+
+                Date reasoningFinishTime = new Date();
+                MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
+
+                finishNumber++;
+
+                Log.d("IoTReasoner", "Finish reasoning. No."+finishNumber);
+
+
+                if(dataFormat == "EN"){
+                    //resultArray.add( modelToEnString(infModel) );
+                }else if(dataFormat == "EN_SCHEMA"){
+                    //resultArray.add( modelToEnString(infModel) );
+                    sendArray.add( data ); // send what it received
+                }else{
+                    StringWriter out = new StringWriter();
+                    sendModel.write(out, dataFormat);
+                    sendArray.add(out.toString());
+                }
+
+                //Log.d("IoTReasoner","out.print"+out.toString());
+
+
+            }
+        }
+
+        public static String getOntology(String urlToRead) throws Exception {
+            StringBuilder result = new StringBuilder();
+            URL url = new URL(urlToRead);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String line;
+            while ((line = rd.readLine()) != null) {
+                result.append(line+ "\n");
+            }
+            rd.close();
+            return result.toString();
+        }
+
+        public Model getModelFromString( String data, String format){
             Model model = ModelFactory.createDefaultModel();
-            StringReader reader = new StringReader(rdfData);
-            model.read(reader, null, "RDF/XML");
-            ioTReasoner.setDataModel(model);
 
-            //                    Model infermodel = ioTReasoner.inferModel(false);// don't save in gateway
-            InfModel infModel = ioTReasoner.inferAndGetResult();
-            Log.d("IoTReasoner", "Finish reasoning.");
-            Date reasoningFinishTime = new Date();
-            MainActivity.reasonTimeIncrease(reasoningFinishTime.getTime() - startTime.getTime());
-            //send to cloud
-            //MQTTclient_pub client = new MQTTclient_pub( httpURI,"IoTReasoning",getLocalIpAddress() );
-            //client.publish(rdfData);//change to model
-            //merge the original rdf model and infered model together
+            // model.read(reader, null, dataFormat);
+            if(format.equals("RDF/XML"))
+                try {
+                    RDFDataMgr.read(model, IOUtils.toInputStream(data, "UTF-8"), Lang.RDFXML) ;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            else if(format.equals("JSON-LD"))
+                try {
+                    RDFDataMgr.read(model, IOUtils.toInputStream(data, "UTF-8"), Lang.JSONLD) ;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            else if(format.equals("N-TRIPLE"))
+                try {
+                    RDFDataMgr.read(model, IOUtils.toInputStream(data, "UTF-8"), Lang.N3) ;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            else if(format.equals("EN")) {
 
-            //update UI
-            //                            resultModel = infermodel.toString();
-            //StringWriter inferOut = new StringWriter();
-            //infModel.write(inferOut, "TURTLE");
-                        /*resultModel = inferOut.toString();
+                model = enToDataModel(data);
 
-                        handler.post(new Runnable() {
-                            public void run() {
-                                instance.resultView.setText(
-                                        instance.resultView.getText()+
-                                                "\n****************************************\n"
-                                                +resultModel);
-                            }
-                        });*/
+            }else if(format.equals("EN_SCHEMA")) {
 
-            //                    final Model union = ModelFactory.createUnion(model, infermodel);
-            StringWriter out = new StringWriter();
-            infModel.write(out, "RDF/XML");
-            //client.publish(out.toString());
-            IoTMqttClient Mclient = new IoTMqttClient(httpURI, "IoTReasoning", "gateway");
-            Mclient.publish(out.toString());
-            reasoningThreads--;
-            finishNumber++;
-            updateStatusView();
-            if( (reasoningThreads < MaxThreads) && !rdfArray.isEmpty() ){
-                reasoning();
+                model = enToDataModel(data);
+
             }
+            return model;
+        }
+
+        private String modelToEnString(Model model) {
+
+            Hashtable<RDFNode, Hashtable<String,String> > objectsTable
+                    = new Hashtable<RDFNode, Hashtable<String,String> >();
+
+//            String ID = null;
+//            String hasArea = null;
+//            String hasLatitude = null;
+//            String hasLongitude = null;
+//            String hasVelocity = null;
+//            String hasDirection = null;
+//            String hasSender = null;
+//            String hasDistance = null;
+//            String hasAcceleration = null;
+//            String hasDateTime = null;
+//            String hasDate = null;
+
+            NodeIterator objs = model.listObjects();
+            while(objs.hasNext()){
+                RDFNode obj = objs.next();
+                objectsTable.put(obj, new Hashtable<String,String>() );
+            }
+
+            StmtIterator stas = model.listStatements();
+
+
+
+            while(stas.hasNext()){
+
+                Statement sta = stas.next();
+
+                if( sta.getObject().isLiteral() ) {
+
+                    if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasID")) {
+                        //ID = sta.getObject().asLiteral().getString();
+                        objectsTable.get(sta.getObject()).put("ID",sta.getObject().asLiteral().getString());
+                        //Log.d("EnReasoner", "ID" );
+
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasArea")) {
+                        //hasArea = sta.getObject().asLiteral().getString();
+                        //Log.d("EnReasoner", "hasArea" );
+                        objectsTable.get(sta.getObject()).put("hasArea",sta.getObject().asLiteral().getString());
+                    }  else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasLatitude")) {
+                        //hasLatitude = sta.getObject().asLiteral().getString();
+                        //Log.d("EnReasoner", "hasLatitude" );
+                        objectsTable.get(sta.getObject()).put("hasLatitude",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasLongitude")) {
+                        //hasLongitude = sta.getObject().asLiteral().getString();
+                        //Log.d("EnReasoner", "hasLongitude" );
+                        objectsTable.get(sta.getObject()).put("hasLongitude",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasVelocity")) {
+                        //hasVelocity = sta.getObject().asLiteral().getString();
+                        //Log.d("EnReasoner", "hasVelocity" );
+                        objectsTable.get(sta.getObject()).put("hasVelocity",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasDirection")) {
+                        //hasDirection = sta.getObject().asLiteral().getString();
+                        //Log.d("EnReasoner", "hasDirection" );
+                        objectsTable.get(sta.getObject()).put("hasDirection",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasSender")) {
+                        //hasSender = sta.getObject().asLiteral().getString();
+                        //Log.d("EnReasoner", "hasSender" );
+                        objectsTable.get(sta.getObject()).put("hasSender",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasDistance")) {
+                        //hasDistance = sta.getObject().asLiteral().getString();
+                        //Log.d("EnReasoner", "hasDistance" );
+                        objectsTable.get(sta.getObject()).put("hasDistance",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasAcceleration")) {
+//                        hasAcceleration = sta.getObject().asLiteral().getString();
+//                        Log.d("EnReasoner", "hasAcceleration" );
+                        objectsTable.get(sta.getObject()).put("hasAcceleration",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasDateTime")) {
+//                        hasDateTime = sta.getObject().asLiteral().getString();
+//                        Log.d("EnReasoner", "hasDateTime" );
+                        objectsTable.get(sta.getObject()).put("hasDateTime",sta.getObject().asLiteral().getString());
+                    } else if (sta.getPredicate().getURI().equals("http://localhost/SensorSchema/ontology#hasDate")) {
+//                        hasDate = sta.getObject().asLiteral().getString();
+//                        Log.d("EnReasoner", "hasDate" );
+                        objectsTable.get(sta.getObject()).put("hasDate",sta.getObject().asLiteral().getString());
+                    }
+
+
+                }
+
+            }
+            String rdfData="";
+            objs = model.listObjects();
+            while(objs.hasNext()){
+                RDFNode obj = objs.next();
+
+                String enPacket = "[urn:uuid:7bcf39 ";
+                enPacket +=
+                        objectsTable.get(obj).get("ID")+" "+
+                        objectsTable.get(obj).get("hasArea") +" "+
+                        objectsTable.get(obj).get("hasLatitude") +" "+
+                        objectsTable.get(obj).get("hasLongitude") + " "+
+                        objectsTable.get(obj).get("hasVelocity") +" "+
+                        objectsTable.get(obj).get("hasDirection") +" "+
+                        objectsTable.get(obj).get("hasSender") +" "+
+                        objectsTable.get(obj).get("hasDistance") +" " +
+                        objectsTable.get(obj).get("hasAcceleration") +" "+
+                        objectsTable.get(obj).get("hasDate") +" "+
+                        objectsTable.get(obj).get("hasDateTime") ;
+
+                enPacket += "]";
+
+                rdfData+=enPacket;
+            }
+
+            System.out.println(rdfData);
+            return rdfData;
         }
     }
 
-    private float readCPUUsage() {
-        try {
-            RandomAccessFile reader = new RandomAccessFile("/proc/stat", "r");
-            String load = reader.readLine();
 
-            String[] toks = load.split(" +");  // Split on one or more spaces
+    public static Model enToDataModel(String enData) {
+        //long d = (new Date()).getTime();
 
-            long idle1 = Long.parseLong(toks[4]);
-            long cpu1 = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[5])
-                    + Long.parseLong(toks[6]) + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
+        Model dataModel = ModelFactory.createDefaultModel();
+        //Log.d("EnReasoner","run en reasoner 1");
+        String[] enLines = enData.split("__");
 
-            try {
-                Thread.sleep(360);
-            } catch (Exception e) {
+        //Statement typeStatement = factory.createStatement(obsURI, RDF.TYPE, obsType);
+        //myGraph.add(typeStatement);
+        dataModel.setNsPrefix("obs", ontologyURI);
+
+        for(int i = 0; i < enLines.length; i++){
+
+            enLines[i] = enLines[i].substring(17,enLines[i].length()-1);
+            String[] obs = enLines[i].split(" ");
+            //Log.d("EnReasoner","OBS[0]:"+obs[0]);
+            //Log.d("EnReasoner","OBS[1]:"+obs[1]);
+            //Log.d("EnReasoner","OBS[2]:"+obs[2]);
+            //Log.d("EnReasoner","OBS[3]:"+obs[3]);
+
+            Resource obsInstance = dataModel.createResource();
+            dataModel.add(obsInstance, RDF.type, dataModel.createResource(getTemplate()[0]));
+
+            if(obs.length==11){
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[1]), dataModel.createTypedLiteral(Integer.valueOf(obs[0])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[2]), dataModel.createTypedLiteral(Integer.valueOf(obs[1])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[3]), dataModel.createTypedLiteral(Double.valueOf(obs[2])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[4]), dataModel.createTypedLiteral(Double.valueOf(obs[3])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[5]), dataModel.createTypedLiteral(Double.valueOf(obs[4])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[6]), dataModel.createTypedLiteral(Integer.valueOf(obs[5])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[7]), dataModel.createTypedLiteral(Integer.valueOf(obs[6])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[8]), dataModel.createTypedLiteral(Double.valueOf(obs[7])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[9]), dataModel.createTypedLiteral(Double.valueOf(obs[8])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[10]), dataModel.createTypedLiteral(Long.valueOf(obs[9])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[11]), dataModel.createLiteral(obs[10]));
             }
-
-            reader.seek(0);
-            load = reader.readLine();
-            reader.close();
-
-            toks = load.split(" +");
-
-            long idle2 = Long.parseLong(toks[4]);
-            long cpu2 = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[5])
-                    + Long.parseLong(toks[6]) + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
-
-            return (float) (cpu2 - cpu1) / ((cpu2 + idle2) - (cpu1 + idle1));
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
 
-        return 0;
+        //reasoningLatency = reasoningLatency + ((new Date()).getTime())-d;
+        return dataModel;
+    }
+    public static String ontologyURI = "http://localhost/SensorSchema/ontology#";
+    public static String[] getTemplate(){
+
+
+        return new String[]{ontologyURI+"Observation", ontologyURI + "hasID", ontologyURI + "hasArea", ontologyURI +
+                "hasLatitude", ontologyURI + "hasLongitude", ontologyURI + "hasVelocity", ontologyURI + "hasDirection", ontologyURI +
+                "hasSender", ontologyURI + "hasDistance", ontologyURI + "hasAcceleration", ontologyURI + "hasDate", ontologyURI + "hasDateTime"};
     }
 
-    class ServerThread implements Runnable {
+    class SocketServerThread implements Runnable {
 
         public void run() {
             Socket socket;
@@ -502,11 +790,6 @@ public class MainActivity extends AppCompatActivity {
 
                 this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
 
-//                PrintWriter out = new PrintWriter(new BufferedWriter(
-//                        new OutputStreamWriter(clientSocket.getOutputStream())),
-//                        true);
-//                out.println("accept.");
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -520,11 +803,15 @@ public class MainActivity extends AppCompatActivity {
 
                     String read = input.readLine();
 
-                    Log.d("IoTSocket","Receive from socket "+ read );
+                    //Log.d("IoTSocket","Receive from socket "+ read );
 
                     //MainActivity.reasoning(read);
                     if(read != null)
                         MainActivity.addReasoningData(read);
+                    else{
+                        clientSocket.close();
+                        break;
+                    }
 
                 } catch (IOException e) {
                     e.printStackTrace();

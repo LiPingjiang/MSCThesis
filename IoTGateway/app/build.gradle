@@ -12,7 +12,7 @@ android {
         versionName "1.0"
 
         // Enabling multidex support.
-        //multiDexEnabled true
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -26,10 +26,25 @@ android {
         exclude 'META-INF/ECLIPSE_.SF'
         exclude 'edl-v10.html'
         exclude 'epl-v10.html'
-        exclude 'META-INF/services/org.openrdf.rio.RDFWriterFactory'
+        //exclude 'META-INF/services/org.openrdf.rio.RDFWriterFactory'
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/maven/org.slf4j/slf4j-api/pom.properties'
         exclude 'META-INF/maven/org.slf4j/slf4j-api/pom.xml'
+   //     exclude 'org/apache/xerces/impl/msg/XMLSerializerMessages.properties'
+        //     exclude 'ont-policy.rdf'
+        //    exclude 'org/apache/xerces/impl/msg/XMLSerializerMessages_en.properties'
+        //exclude 'org/apache/xerces/impl/xpath/regex/message_ja.properties'
+        //exclude 'etc/owl-b.rules'
+        //exclude 'etc/rdfs-noresource.rules'
+        //exclude 'etc/owl-fb-old.rules'
+        //exclude 'etc/rdfs-fb-tgc.rules'
+        //exclude 'META-INF/services/javax.xml.parsers.SAXParserFactory'
+        //exclude 'org/apache/xerces/impl/msg/DatatypeMessages.properties'
+        //exclude 'org/apache/xerces/impl/msg/XMLMessages_en.properties'
+        //exclude 'org/apache/xerces/impl/msg/XPointerMessages.properties'
+        //exclude 'etc/rdfs.rules'
+        //exclude 'etc/rdfs-b-tuned.rules'
+        //exclude 'etc/owl-fb-mini.rules'
 //        exclude 'META-INF/services/org.openrdf.rio.RDFParserFactory'
 //        exclude 'META-INF/services/org.openrdf.repository.config.RepositoryFactory'
 
@@ -61,4 +76,11 @@ android {
         compile 'org.apache.jena:jena-iri:0.9.3'
         compile files('src/main/libs/org.eclipse.paho.client.mqttv3-1.0.2.jar')
         compile 'com.google.android.gms:play-services-appindexing:8.1.0'
+        // http://mvnrepository.com/artifact/org.apache.jena/jena-arq
+        //compile group: 'org.apache.jena', name: 'jena-arq', version: '2.13.0'
+        compile files('src/main/libs/jena-android-arq-2.13.0.jar')
+        compile 'org.apache.directory.studio:org.apache.commons.io:2.4'
+        compile 'com.fasterxml.jackson.core:jackson-core:2.7.4'
+        compile 'com.fasterxml.jackson.core:jackson-annotations:2.7.4'
+        compile 'com.fasterxml.jackson.core:jackson-databind:2.7.4'
     }

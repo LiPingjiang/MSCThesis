@@ -19,8 +19,11 @@ import com.hp.hpl.jena.util.PrintUtil;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -58,6 +61,21 @@ public class IoTReasoner {
             throw new IllegalArgumentException("File: "+ontology+" not found");
         // Read the RDF/XML file
         schema.read(in, null);
+
+        PrintUtil.registerPrefix(prefix, graphURI);
+
+        this.initializeGenericReasoner();
+
+    }
+    public IoTReasoner( String ontologySchema) {
+
+        schema = ModelFactory.createDefaultModel();
+
+        Log.d("reasoner",ontologySchema);
+
+
+        InputStream in = new ByteArrayInputStream(ontologySchema.getBytes(Charset.forName("UTF-8")));
+        schema.read(in,null , "TURTLE");
 
         PrintUtil.registerPrefix(prefix, graphURI);
 
@@ -113,7 +131,7 @@ public class IoTReasoner {
                 //"Stop1","Stop2","Stop3","Stop4",
                 //"LongStop",
                 //"VeryLongStop",
-                "LowSpeed",
+                //"LowSpeed",
                 "HighAceleration","HighDeacceleration"
         };
 

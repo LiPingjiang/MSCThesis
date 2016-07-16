@@ -1,4 +1,2 @@
 [HighDeacceleration: (?o rdf:type obs:Observation) (?o obs:hasAcceleration ?a)  lessThan(?a, -0.5) -> (?o rdf:type obs:HighDeacceleration)]
 [HighAcceleration: (?o rdf:type obs:Observation) (?o obs:hasAcceleration ?a)  greaterThan(?a, 0.7) -> (?o rdf:type obs:HighAcceleration)]
-
-[LowSpeed: (?o rdf:type obs:Observation) (?o obs:hasVelocity ?v) lessThan(?v, "30"^^xsd:integer) -> (?o rdf:type obs:LowSpeed)]
