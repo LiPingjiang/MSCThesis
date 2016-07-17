@@ -7,8 +7,10 @@ import java.util.Scanner;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.vocabulary.RDF;
 
 import com.pli.IoTReasoner.IoTReasoner;
 
@@ -24,6 +26,7 @@ public class App
 	public static int requestNumber;
 	public static String rdfFormat="RDF/XML";
 	public static IoTReasoner ioTReasoner;
+	public static String ontologyURI = "http://localhost/SensorSchema/ontology#";
 	
     public static void main( String[] args )
     {
@@ -59,7 +62,8 @@ public class App
         
         client = new MQTTclient_sub(
         		//"tcp://52.58.92.249:1883",
-        		"tcp://localhost:1883",
+        		"tcp://vm0104.virtues.fi:1883",
+        		//"tcp://localhost:1883",
         		"IoTReasoning/+"
         		);
         client.start();
@@ -92,6 +96,8 @@ public class App
     			System.out.println("run crash.");
     			e.printStackTrace();
     		}
+    	}else if( App.rdfFormat.equals("EN") ){
+    		rdfModel = enToDataModel(data);
     	}
     	
     	
@@ -106,7 +112,58 @@ public class App
         Date finishTime = new Date();
 		App.timerIncrease( finishTime.getTime()-startTime.getTime() );
     }
-    public static synchronized void timerIncrease( long time){
+    private static Model enToDataModel(String enData) {
+        //long d = (new Date()).getTime();
+
+    	
+        Model dataModel = ModelFactory.createDefaultModel();
+        //Log.d("EnReasoner","run en reasoner 1");
+        String[] enLines = enData.split("__");
+
+        //Statement typeStatement = factory.createStatement(obsURI, RDF.TYPE, obsType);
+        //myGraph.add(typeStatement);
+        dataModel.setNsPrefix("obs", ontologyURI);
+
+        for(int i = 0; i < enLines.length; i++){
+
+            enLines[i] = enLines[i].substring(17,enLines[i].length()-1);
+            String[] obs = enLines[i].split(" ");
+            //Log.d("EnReasoner","OBS[0]:"+obs[0]);
+            //Log.d("EnReasoner","OBS[1]:"+obs[1]);
+            //Log.d("EnReasoner","OBS[2]:"+obs[2]);
+            //Log.d("EnReasoner","OBS[3]:"+obs[3]);
+
+            Resource obsInstance = dataModel.createResource();
+            dataModel.add(obsInstance, RDF.type, dataModel.createResource(getTemplate()[0]));
+
+            if(obs.length==11){
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[1]), dataModel.createTypedLiteral(Integer.valueOf(obs[0])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[2]), dataModel.createTypedLiteral(Integer.valueOf(obs[1])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[3]), dataModel.createTypedLiteral(Double.valueOf(obs[2])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[4]), dataModel.createTypedLiteral(Double.valueOf(obs[3])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[5]), dataModel.createTypedLiteral(Double.valueOf(obs[4])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[6]), dataModel.createTypedLiteral(Integer.valueOf(obs[5])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[7]), dataModel.createTypedLiteral(Integer.valueOf(obs[6])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[8]), dataModel.createTypedLiteral(Double.valueOf(obs[7])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[9]), dataModel.createTypedLiteral(Double.valueOf(obs[8])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[10]), dataModel.createTypedLiteral(Long.valueOf(obs[9])));
+                dataModel.add(obsInstance, dataModel.createProperty(getTemplate()[11]), dataModel.createLiteral(obs[10]));
+            }
+        }
+
+        //reasoningLatency = reasoningLatency + ((new Date()).getTime())-d;
+        return dataModel;
+    }
+    
+    public static String[] getTemplate(){
+
+
+        return new String[]{ontologyURI+"Observation", ontologyURI + "hasID", ontologyURI + "hasArea", ontologyURI +
+                "hasLatitude", ontologyURI + "hasLongitude", ontologyURI + "hasVelocity", ontologyURI + "hasDirection", ontologyURI +
+                "hasSender", ontologyURI + "hasDistance", ontologyURI + "hasAcceleration", ontologyURI + "hasDate", ontologyURI + "hasDateTime"};
+    }
+    
+	public static synchronized void timerIncrease( long time){
     	reasoningTimer += time;
     	requestNumber++;
     	System.out.println( "Reasoning time: " + reasoningTimer + "("+ reasoningTimer/1000+" seconds) request:"+requestNumber );

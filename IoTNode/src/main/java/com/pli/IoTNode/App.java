@@ -35,7 +35,8 @@ public class App
 	
 	static int NumberOfThreads = 10;	//how many threads(IoTNodes)
 	static int DataSize = 400;
-	static String httpURI ="tcp://52.58.195.130:1883";
+	//static String httpURI ="tcp://52.58.195.130:1883";
+	static String httpURI ="tcp://vm0104.virtues.fi:1883";
 	//ps: by doing this, the size is fix
 		static List<String> IoTReasonerAddress = Arrays.asList(
 				//"192.168.0.107"
