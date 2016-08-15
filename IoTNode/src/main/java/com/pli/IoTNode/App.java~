@@ -37,11 +37,10 @@ public class App
 	static int DataSize = 400;
 	//static String httpURI ="tcp://52.58.195.130:1883";
 	//static String httpURI ="tcp://vm0104.virtues.fi:1883";
-	static String httpURI ="tcp://ec2-52-59-70-81.eu-central-1.compute.amazonaws.com:1883";
-	//static String httpURI ="tcp://130.231.50.129:1883";
+	static String httpURI ="tcp://130.231.50.129:1883";
 	//ps: by doing this, the size is fix
 		static List<String> IoTReasonerAddress = Arrays.asList(
-				"192.168.43.142"
+				//"192.168.0.107"
 				//"10.20.210.145"
 //				"10.20.222.81",
 				//"10.20.218.106",
@@ -55,7 +54,7 @@ public class App
 //				"10.20.220.172",//whit lg
 //				"10.20.196.220",//huawei
 //				"10.20.223.118",
-//				"10.20.217.137"
+				"10.20.207.130"
 				
 				);
 	
@@ -308,7 +307,7 @@ public class App
 				
 				switch(destination){
 					case TO_CLOUD_SERVER:{
-
+						
 						IoTMqttClient Mclient = new IoTMqttClient( httpURI,"IoTReasoning" , clientId+"");
 						for(String rdf : rdfList){
 

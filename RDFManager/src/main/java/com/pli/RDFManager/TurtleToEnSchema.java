@@ -182,6 +182,8 @@ public class TurtleToEnSchema {
 				//System.out.println("End Error");
 			}
 			//index++;//move to next
+			System.out.println(itemList.size() + " " + index);
+			System.out.println(itemList.get(index));
 		}while(!itemList.get(index).equals("."));
 		
 		index++;

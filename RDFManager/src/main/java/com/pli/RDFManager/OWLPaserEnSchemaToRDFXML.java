@@ -4,35 +4,55 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.sql.Struct;
+import java.util.Date;
 
 public class OWLPaserEnSchemaToRDFXML {
 	
 	public static String pathPrefix = "//home//pli//Desktop//";
-	public static Entities entities = null;
+	public static Entities entities = new Entities();
+	String prefix=null;
 	
 	
 	public static void main( String[] args )
     {
-		entities = new Entities();
+		Date dateStart = new Date();
+		//entities = ;
 		String path = pathPrefix + "ontology.enSchema";
 		OWLPaserEnSchemaToRDFXML parser = new OWLPaserEnSchemaToRDFXML();
 		parser.readFromEnSchema(path);
 		
-		parser.printToFile(pathPrefix + "ontologyEN.owl", entities.toRDFXML() );
+		//parser.printToFile(pathPrefix + "ontologyEN.owl", entities.toRDFXML() );
 //		parser.printToFile(pathPrefix + "ontologyEN.owl", parser.entities.toENSchema() );
+		parser.printToFile(pathPrefix + "ontologyEN.owl", parser.toTURTLE() );
+		
+		Date dateEnd = new Date();
+		
+		System.out.println(" Time(ms): "+ (dateEnd.getTime()-dateStart.getTime()) );
     }
 	
-
+	
+	public String toTURTLE(){
+		return entities.toTurtle(prefix);
+	}
 	public void readFromEnSchema(String path){
-		
+		prefix = "";
 		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
 		    String line;
 		    while ((line = br.readLine()) != null) {
 		       // process the line.
-//		    	System.out.println(line);
-		    	addToEntityConstructor(line);
+		    	//System.out.println(line);
+		    	if(line.contains("@prefix")){
+		    		prefix += line+ "\n";
+		    	}else{
+		    		//System.out.println("addToEntityConstructor");
+		    		addToEntityConstructor(line);
+		    	}
+		    	
 		    }
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -50,7 +70,8 @@ public class OWLPaserEnSchemaToRDFXML {
 			e.printStackTrace();
 		}
 		//out.println(finalMessage);
-		out.println( data );
+		//out.println( data );
+		out.print( data );
 		out.close();
 	}
 	
@@ -75,7 +96,7 @@ public class OWLPaserEnSchemaToRDFXML {
 			eConstructor = new EntityConstructor();
 			eConstructor.type=strings[0].replace("\t", "").replace(" ", "");
 			eConstructor.name=strings[1].replace("\t", "").replace(" ", "");
-//			System.out.println("-----------     :" + eConstructor.type + "  " + eConstructor.name + " size:"+entities.getSize());
+			System.out.println("-----------     :" + eConstructor.type + "  " + eConstructor.name + " size:"+entities.getSize());
 					
 			entities.addEntity(eConstructor.type, eConstructor.name);
 		}else if(line.charAt(0)=='>'){
@@ -117,4 +138,7 @@ public class OWLPaserEnSchemaToRDFXML {
 		}
 		
 	}
+
+
+
 }

@@ -450,7 +450,7 @@ public final class IoTReasoner{
 
     public Model inferModel(boolean store){
 
-        String[] classes = {"RightTurn", "LeftTurn", "UTurn", "Jam", "HighAvgSpeed", "LongStop", "HighAcceleration", "HighDeAcceleration", "VeryLongStop"};
+        String[] classes = {"RightTurn", "LeftTurn", "UTurn", "Jam", "HighAvgSpeed", "LongStop", "HighAcceleration", "HighDeAcceleration", "VeryLongStop","LowSpeed"};
         //String[] classes = {"RightTurn", "LeftTurn", "UTurn", "Jam",  "LongStop"};
 
 
