@@ -29,18 +29,21 @@ public class App
     	
     	//transferRDFFiles();
     	
-//    	generateArtificialData_json();
+    	//generateArtificialData_json();
     	
 //    	generateArtificialData_n3();
  
 //    	generateArtificialData();
-    	generateArtificialData_en();
+//    	generateArtificialData_en();
+    	
 
     	
     	
     }
 
-    private static void changeProperty(){
+
+
+	private static void changeProperty(){
     	String personURI    = "http://somewhere/JohnSmith";
     	String fullName     = "John Smith";
     	Model model = ModelFactory.createDefaultModel();

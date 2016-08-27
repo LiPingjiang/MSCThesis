@@ -30,7 +30,7 @@ public class ReadingOntology {
 		System.out.println("....................NEW....................");
 		Date dateStart = new Date();
 		
-		OWLPaserEnSchemaToRDFXML parser = new OWLPaserEnSchemaToRDFXML();
+		OWLPaserEnSchemaToTurtle parser = new OWLPaserEnSchemaToTurtle();
 		//parser.readFromEnSchema( ReadingOntology.class.getResource("/"+ontology ).toString());
 		parser.readFromEnSchema("//home//pli//Desktop//"+"ontology.enSchema");
 		parser.printToFile("//home//pli//MSCThesis//RDFManager//src//main//resources//ontologyEN.owl", parser.toTURTLE() );
@@ -67,7 +67,7 @@ public class ReadingOntology {
 		System.out.println("....................NEW....................");
 		Date dateStart = new Date();
 		
-		OWLPaserEnSchemaToRDFXML parser = new OWLPaserEnSchemaToRDFXML();
+		OWLPaserEnSchemaToTurtle parser = new OWLPaserEnSchemaToTurtle();
 		//parser.readFromEnSchema( ReadingOntology.class.getResource("/"+ontology ).toString());
 		parser.readFromEnSchema("//home//pli//MSCThesis//RDFManager//src//main//resources//"+ontology);
 		

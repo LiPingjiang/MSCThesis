@@ -11,7 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.sql.Struct;
 import java.util.Date;
 
-public class OWLPaserEnSchemaToRDFXML {
+public class OWLPaserEnSchemaToTurtle {
 	
 	public static String pathPrefix = "//home//pli//Desktop//";
 	public static Entities entities = new Entities();
@@ -23,12 +23,12 @@ public class OWLPaserEnSchemaToRDFXML {
 		Date dateStart = new Date();
 		//entities = ;
 		String path = pathPrefix + "ontology.enSchema";
-		OWLPaserEnSchemaToRDFXML parser = new OWLPaserEnSchemaToRDFXML();
+		OWLPaserEnSchemaToTurtle parser = new OWLPaserEnSchemaToTurtle();
 		parser.readFromEnSchema(path);
 		
 		//parser.printToFile(pathPrefix + "ontologyEN.owl", entities.toRDFXML() );
 //		parser.printToFile(pathPrefix + "ontologyEN.owl", parser.entities.toENSchema() );
-		parser.printToFile(pathPrefix + "ontologyEN.owl", parser.toTURTLE() );
+		parser.printToFile(pathPrefix + "ontology.turtle", parser.toTURTLE() );
 		
 		Date dateEnd = new Date();
 		
