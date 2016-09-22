@@ -448,9 +448,9 @@ public final class IoTReasoner{
         return infModel;
     }
 
-    public Model inferModel(boolean store){
+    public long inferModel(boolean store){
 
-        String[] classes = {"RightTurn", "LeftTurn", "UTurn", "Jam", "HighAvgSpeed", "LongStop", "HighAcceleration", "HighDeAcceleration", "VeryLongStop","LowSpeed"};
+        String[] classes = { "HighAvgSpeed4","RightTurn", "LeftTurn", "UTurn", "Jam", "HighAvgSpeed", "LongStop", "HighAcceleration", "HighDeacceleration", "VeryLongStop","LowSpeed"};
         //String[] classes = {"RightTurn", "LeftTurn", "UTurn", "Jam",  "LongStop"};
 
 
@@ -517,7 +517,7 @@ public final class IoTReasoner{
                 while (propit.hasNext()) {
                     proplist.add(propit.next().toString());
                 }
-                //System.out.println( "_______________________classType: "+classType );
+                System.out.println( "_______________________classType: "+classType );
                 //process each instance
                 while (instances.hasNext()) {
                     
@@ -555,13 +555,19 @@ public final class IoTReasoner{
             }
         });
 
-        if(store == true && !inferencedInstancesModel.isEmpty())//save to the sesame database --pli
-            this.updateSesameRepository(inferencedInstancesModel);
+        long databaseTime=0;
+        if(store == true && !inferencedInstancesModel.isEmpty()){//save to the sesame database --pli
+        	Date startTime = new Date();
+        	this.updateSesameRepository(inferencedInstancesModel);
+        	Date finishTime = new Date();
+        	databaseTime = finishTime.getTime()-startTime.getTime();
+        }
 
         //tempModel.write(System.out);
         //this.ontologyModel = inferencedInstancesModel;
 
-        return inferencedInstancesModel;
+        //return inferencedInstancesModel;
+        return databaseTime;
 
     }
     

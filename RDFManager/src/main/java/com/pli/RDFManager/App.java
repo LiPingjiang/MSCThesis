@@ -13,6 +13,7 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.sparql.expr.E_StrLength;
+import org.apache.jena.tdb.solver.stats.Stats;
 import org.apache.jena.vocabulary.VCARD;
 
 /**
@@ -21,6 +22,7 @@ import org.apache.jena.vocabulary.VCARD;
  */
 public class App 
 {
+	public static String ontologyURI = "http://localhost/SensorSchema/ontology#";
     public static void main( String[] args )
     {
     	
@@ -33,7 +35,7 @@ public class App
     	
 //    	generateArtificialData_n3();
  
-//    	generateArtificialData();
+    	generateArtificialData();
 //    	generateArtificialData_en();
     	
 
@@ -84,10 +86,13 @@ public class App
 		
 		for(int index = 1; index <= carNumbers ; index ++){
 			new File("C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+index ).mkdirs();
+			//new File("home/"+System.getProperty("user.name")+"/Desktop/MSCThesis/ArtificalData/"+index ).mkdirs();
 		}
 		
 		//total 
 		//30 * 2400 = 72000
+		long timestamp=1365156007506L;
+		long ID=185600000L;
     	for(int index = 0; index < carNumbers*eachNode ; index ++){
     		Model model = ModelFactory.createDefaultModel() ;
         	model.read("C:\\Users\\pli\\Desktop\\obs_data_individuals_rdf\\incident_"+ (15000+index%72000 ) +".rdf") ;
@@ -98,6 +103,10 @@ public class App
         	
         	
         	StmtIterator  stas = model.listStatements();
+        	Model tempModel = ModelFactory.createDefaultModel() ;
+        	tempModel.setNsPrefix("obs", ontologyURI);
+        	
+        	Resource subject=null;
         	while(stas.hasNext()){
         		
         		Statement sta = stas.next();
@@ -109,12 +118,14 @@ public class App
         				//sta.changeLiteralObject( index/2400+1 );
         				//String subject = sta.getSubject().getURI();
 
-        				model.remove(sta);
+        				//model.remove(sta);
         				//System.out.println(sta.getPredicate().getLocalName());
         				//sta.changeObject("Sim");
         				//System.out.println(sta.toString());
         				//model.createResource(sta.getSubject().getURI()).addProperty( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology", "hasID") , (index/2400+1)+"", "obs:hasID" );
-        				model.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasID") , (index/eachNode+1) );
+        				//model.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasID") , (index/eachNode+1) );
+        				//tempModel.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasID") , (index/eachNode+1) );
+        				tempModel.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasID") , ID++ );
         				
         				
         				//sta.changeLiteralObject( 100 );
@@ -123,23 +134,46 @@ public class App
         				
             			// Wriet Turtle to the blocks variant
             		    
-            		    FileWriter out = null;
+            		    subject = sta.getSubject();
             		    
-            		    try {
-            		        out = new FileWriter( "C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode +1) +"\\incident_"+ (index%eachNode) +".rdf" );
-            		        System.out.println("Write to C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode+1 ) +"\\incident_"+ (index%eachNode) +".rdf");
-            		    } catch (IOException e) {
-            		        // TODO Auto-generated catch block
-            		    	System.out.println("Fail to write! ");
-            		        e.printStackTrace();
-            		    }
-            		    model.write(out);
-            		    
-            		    break;
+            		    //break;
         			}
+        			
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasSender" ) ){
+        				//model.remove(sta);
+        				//model.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasSender") , 51709000+(index/eachNode+1) );
+        				tempModel.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasSender") , 51709000+(index/eachNode+1) );
+        				
+        			}
+        			else if( sta.getPredicate().getURI().toString().equals( "http://localhost/SensorSchema/ontology#hasDate" ) ){
+        				//model.remove(sta);
+        				//model.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasDate") , (timestamp++) );
+        				tempModel.createResource(sta.getSubject().getURI()).addLiteral( ResourceFactory.createProperty( "http://localhost/SensorSchema/ontology#", "hasDate") , (timestamp++) );
+        				
+        			}else{
+        				tempModel.add(sta);
+        			}
+        			
         		}
+        		
         	}
         	
+        	tempModel.add(ResourceFactory.createStatement( subject , ResourceFactory.createProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#","type") , ResourceFactory.createProperty("http://localhost/SensorSchema/ontology#", "Observation")) );
+			
+
+        	FileWriter out = null;
+		    
+		    try {
+		        //out = new FileWriter( "C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode +1) +"\\incident_"+ (index%eachNode) +".rdf" );
+		    	out = new FileWriter( "P:\\Desktop\\MSCThesis\\ArtificalData\\"+ ( index/eachNode +1) +"\\incident_"+ (index%eachNode) +".rdf" );
+		    	
+		    	System.out.println("Write to C:\\Users\\pli\\Documents\\MSCThesis\\ArtificalData\\"+ ( index/eachNode+1 ) +"\\incident_"+ (index%eachNode) +".rdf");
+		    } catch (IOException e) {
+		        // TODO Auto-generated catch block
+		    	System.out.println("Fail to write! ");
+		        e.printStackTrace();
+		    }
+		    tempModel.write(out);
     	}
 		
 	}

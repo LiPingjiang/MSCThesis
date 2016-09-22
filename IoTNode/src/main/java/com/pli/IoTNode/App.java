@@ -171,13 +171,22 @@ public class App
 			}
 		} 
 		
-		System.out.println("Input IoTNode number:");
-		keyboard = new Scanner(System.in);
-		NumberOfThreads = Integer.parseInt (keyboard.next());
+		//System.out.println("Input IoTNode number:");
+		//keyboard = new Scanner(System.in);
+		//NumberOfThreads = Integer.parseInt (keyboard.next());
 		
-		System.out.println("Input datasize per node:");
+		//System.out.println("Input datasize per node:");
+		//keyboard = new Scanner(System.in);
+		//DataSize = Integer.parseInt (keyboard.next());
+		
+		System.out.println("Input experiment ID:");
 		keyboard = new Scanner(System.in);
-		DataSize = Integer.parseInt (keyboard.next());
+		int[] nt={0, 20,  40,  60,  80,  100,  40,  60,  80,  100, 60,  90,  120, 150, 60,  60,  60,  60};
+		int[] ds={0, 400, 400, 400, 400, 400,  800, 533, 400, 320, 533, 355, 266, 213, 200, 400, 600, 800};
+		int task = keyboard.nextInt();
+		NumberOfThreads = nt[task];
+		DataSize = ds[task];
+		
 		
 		//set up timer
 		timer =0;

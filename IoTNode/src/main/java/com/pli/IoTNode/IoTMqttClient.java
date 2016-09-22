@@ -86,7 +86,7 @@ public class IoTMqttClient implements MqttCallback{
 	
 	@Override
 	public void connectionLost(Throwable cause) {
-		System.out.println("Connection lost!");
+		//System.out.println("Connection lost!");
 		// TODO Auto-generated method stub
 		
 	}
@@ -106,8 +106,10 @@ public class IoTMqttClient implements MqttCallback{
 		//System.out.println("Pub complete!");
 		finishTime = new Date();
 		timer = finishTime.getTime()-startTime.getTime();
-		System.out.println("Time: " + timer);
-		App.timerIncrease(timer);
+		//System.out.println("Time: " + timer);
+		//App.timerIncrease(timer);
+		SendProcessData.timerIncrease(timer);
+		//SendMeasurer.timerIncrease(timer);
 	}
 	
 	public void close(){

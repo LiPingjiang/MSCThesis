@@ -287,19 +287,25 @@ public class SendProcessData
 			    		}
 						
 						StmtIterator  stas = localModel.listStatements();
+
+						//manually control what to send
+						
 		                while(stas.hasNext()){
 
 		                    Statement sta = stas.next();
 
 		                    if( sta.getObject().isLiteral() ){
-		                        if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasID" ) ){
+		                    	
+		                    	if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#Observation" ) ){
+		                    		sendModel.add(sta);
+		                    	}else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasID" ) ){
 		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasArea" ) ) {
-		                            sendModel.add(sta);
+		                            //sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasLatitude" ) ){
-		                            sendModel.add(sta);
+		                            //sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasLongitude" ) ){
-		                            sendModel.add(sta);
+		                            //sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasVelocity" ) ){
 		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDirection" ) ){
@@ -313,7 +319,7 @@ public class SendProcessData
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDistance" ) ){
 		                        	//sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasAcceleration" ) ){
-		                            //localModel.add(sta);
+		                        	//sendModel.add(sta);
 		                        }else{
 		                            //Log.d("IoTReasoner","sta: "+sta.toString() );
 		                            //localModel.add(sta);

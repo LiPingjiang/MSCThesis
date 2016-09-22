@@ -22,7 +22,8 @@ import com.pli.IoTReasoner.IoTReasoner;
 public class App
 {
 	public static MQTTclient_sub client;
-	public static long reasoningTimer;
+	public static long reasoningTimer=0;
+	public static long databaseTimer=0;
 	public static int requestNumber;
 	public static String rdfFormat="RDF/XML";
 	public static IoTReasoner ioTReasoner;
@@ -107,14 +108,28 @@ public class App
     	//IoTReasoner ioTReasoner = new IoTReasoner();
         ioTReasoner.setDataFormat(App.rdfFormat);
         ioTReasoner.setDataModel(rdfModel);
-        ioTReasoner.inferModel(true);
+        long databaseTime = ioTReasoner.inferModel(true);
         
         System.out.println("Finish Reasoning.");
         
         Date finishTime = new Date();
-		App.timerIncrease( finishTime.getTime()-startTime.getTime() );
+		App.reasoningTimerIncrease( finishTime.getTime()-startTime.getTime()- databaseTime );
+		App.databaseTimerIncrease( databaseTime );
     }
-    private static Model enToDataModel(String enData) {
+    public static synchronized void databaseTimerIncrease(long time) {
+    	databaseTimer += time;
+    	//requestNumber++;
+    	System.out.println( "Reasoning time: " + reasoningTimer + "("+ reasoningTimer/1000+" seconds) request:"+requestNumber +"  Database time: " + databaseTimer );
+    	
+    			
+	}
+    public static synchronized void reasoningTimerIncrease(long time) {
+		reasoningTimer += time;
+    	requestNumber++;
+    	System.out.println( "Reasoning time: " + reasoningTimer + "("+ reasoningTimer/1000+" seconds) request:"+requestNumber +"  Database time: " + databaseTimer );
+    	
+	}
+	private static Model enToDataModel(String enData) {
         //long d = (new Date()).getTime();
 
     	
