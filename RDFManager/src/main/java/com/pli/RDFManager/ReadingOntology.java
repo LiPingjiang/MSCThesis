@@ -9,6 +9,13 @@ import org.apache.jena.ontology.OntModel;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.util.FileManager;
 
+
+/**
+ * 
+ * @author pli
+ *
+ * This is for measuring the Jena Model reading time
+ */
 public class ReadingOntology {
 	
 

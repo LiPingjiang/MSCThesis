@@ -7,9 +7,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
+
+import com.pli.RDFManager.Entities.Entity;
 
 public class TurtleToEnSchema {
 	
@@ -129,12 +135,49 @@ public class TurtleToEnSchema {
 			i = processNewEntity( i, item);
 		}
 		
+		//check type
+		
+		for(Entry<String, Entity> entry : entities.getAllEntities().entrySet()) {
+		    String name = entry.getKey();
+		    Entity entity = entry.getValue();
+
+		    if(entity.getContent().containsKey("rdf:type")){
+		    	for(Iterator<String> i = entity.getContent().get("rdf:type").iterator(); i.hasNext(); ) {
+			        String type = i.next();
+			        if(type.contains("owl:NamedIndividual")
+			        		|| type.contains("owl:Restriction")
+			        		|| type.contains("rdfs:Datatype")
+			        		|| type.contains("owl:FunctionalProperty")
+			        		|| type.contains("owl:InverseFunctionalProperty")
+			        		|| type.contains("owl:Axiom")
+			        		|| type.contains("owl:AllDisjointClasses")
+			        		|| type.contains("owl:NegativePropertyAssertion")
+			        		|| type.contains("owl:ReflexiveProperty")
+			        		|| type.contains("owl:DatatypeProperty")
+			        		|| type.contains("owl:TransitiveProperty")
+			        		|| type.contains("owl:ObjectProperty")
+			        		|| type.contains("owl:IrreflexiveProperty")
+			        		|| type.contains("owl:SymmetricProperty")
+			        		|| type.contains("owl:Ontology")
+			        		|| type.contains("owl:AsymmetricProperty")
+			        		){
+			        	entities.changeType(name,type);
+			        	//System.out.println(item);
+			        	break;
+			        }
+			        
+			    }
+		    }
+		    
+		    
+		}
+		
 	}
 	private int processNewEntity(int index, String item) {
 		//int index = i;
 		Boolean objectIsAnonymou = false;
 		String objectName = item;
-		String objectType = "en:Entity";
+		String objectType = "owl:Class";
 		
 		//if(itemList.get(index).equals(".")){
 		//	return index+1;
@@ -150,17 +193,17 @@ public class TurtleToEnSchema {
 			
 			//check Object
 			if(objectName.equals("[]")){
-				objectName = entities.AddSystemAnon("en:Entity");
+				objectName = entities.AddSystemAnon("owl:Class");
 				objectIsAnonymou = true;
 			}
 			do{// subject list
 				String subjectName = itemList.get(++index);
 				//process subject
 				if(subjectName.equals("[")){
-					subjectName = entities.AddAnon("en:Entity");
+					subjectName = entities.AddAnon("owl:Class");
 					entities.addToEntity(objectType, objectName, predicate, subjectName);
 					
-					index = processAnonymousSubject(index, "en:Entity",objectName, subjectName);
+					index = processAnonymousSubject(index, "owl:Class",objectName, subjectName);
 				}else if(subjectName.equals("(")){
 					subjectName = entities.AddCollection();
 					index = processCollectionSubject(index, subjectName);
@@ -208,9 +251,9 @@ public class TurtleToEnSchema {
 			String subjectName = itemList.get(index);
 			
 			if(subjectName.equals("[")){
-				subjectName = entities.AddSystemAnon("en:Entity");
+				subjectName = entities.AddSystemAnon("owl:Class");
 				entities.addToEntity(objectType, objectName, predicate, subjectName);
-				index = processAnonymousSubject(index, "en:Entity",objectName, subjectName);
+				index = processAnonymousSubject(index, "owl:Class",objectName, subjectName);
 			} else if(subjectName.equals("(")){
 				subjectName = entities.AddCollection();
 				index = processCollectionSubject(index, subjectName);
@@ -243,15 +286,15 @@ public class TurtleToEnSchema {
 			
 			
 			if(subject.equals("[")){
-				subject = entities.AddAnon("en:Entity");
-				entities.addToEntity("en:Entity", subjectName, predicate, subject);
-				index = processAnonymousSubject(index, "en:Entity",subjectName,subject);
+				subject = entities.AddAnon("owl:Class");
+				entities.addToEntity("owl:Class", subjectName, predicate, subject);
+				index = processAnonymousSubject(index, "owl:Class",subjectName,subject);
 			}else if(subject.equals("(")){
 				subject = entities.AddCollection();
 				index = processCollectionSubject(index, subject);
-				entities.addToEntity(  "en:Entity", subjectName, predicate, subject);
+				entities.addToEntity(  "owl:Class", subjectName, predicate, subject);
 			}else {
-				entities.addToEntity("en:Entity", subjectName, predicate, subject);
+				entities.addToEntity("owl:Class", subjectName, predicate, subject);
 				index ++;
 			}
 			

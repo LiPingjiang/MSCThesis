@@ -22,6 +22,13 @@ import org.xml.sax.SAXException;
 
 import com.google.common.base.CaseFormat;
 
+/***
+ * 
+ * @author pli
+ *
+ *
+ * No in use anymore
+ */
 public class OWLParserRDFXMLToEnSchema {
 	
 	public static Logger logger = LoggerFactory.getLogger(OWLParserRDFXMLToEnSchema.class);

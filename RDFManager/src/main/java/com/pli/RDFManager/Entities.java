@@ -29,7 +29,13 @@ import org.w3c.dom.ls.LSSerializer;
 import ch.qos.logback.core.joran.conditional.IfAction;
 import jena.turtle;
 
-
+/***
+ * 
+ * @author pli
+ *
+ *
+ * This class define a class which contain Entities for EN Schema
+ */
 public class Entities {
 
 	HashMap< String, Entity> entities = new HashMap< String, Entity>();// key = Entity Name, value = Entity Object
@@ -158,6 +164,7 @@ public class Entities {
 		String EntityName = "systemAnon_"+systemAnonEntities.size();
 		
 		anonEntities.put(EntityName, new Entity(EntityType, EntityName));
+		systemAnonEntities.put(EntityName, new Entity(EntityType, EntityName));
 		addEntity(EntityType, EntityName);
 		
 		//System.out.println(EntityName);
@@ -804,5 +811,12 @@ public class Entities {
 		return anonymous;
 	}
 
-	
+	public HashMap< String, Entity> getAllEntities(){
+		return entities;
+	}
+
+	public void changeType(String name, String type) {
+		entities.get(name).EntityType = type;
+		
+	}
 }

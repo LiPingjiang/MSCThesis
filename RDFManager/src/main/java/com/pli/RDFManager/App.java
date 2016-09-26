@@ -16,9 +16,11 @@ import org.apache.jena.sparql.expr.E_StrLength;
 import org.apache.jena.tdb.solver.stats.Stats;
 import org.apache.jena.vocabulary.VCARD;
 
-/**
- * Hello world!
+/***
+ * 
+ * @author pli
  *
+ * This is to generate and extend RDF data 
  */
 public class App 
 {

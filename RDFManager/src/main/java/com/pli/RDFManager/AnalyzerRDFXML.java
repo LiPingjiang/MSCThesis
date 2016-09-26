@@ -30,6 +30,12 @@ import org.xml.sax.SAXException;
 
 import com.pli.RDFManager.Entities.Entity;
 
+/***
+ * 
+ * @author pli
+ *
+ * This is for static analysis of Ontology
+ */
 public class AnalyzerRDFXML {
 
 	public static String pathPrefix = "//home//pli//Desktop//";

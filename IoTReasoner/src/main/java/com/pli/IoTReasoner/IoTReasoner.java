@@ -517,7 +517,7 @@ public final class IoTReasoner{
                 while (propit.hasNext()) {
                     proplist.add(propit.next().toString());
                 }
-                System.out.println( "_______________________classType: "+classType );
+                //System.out.println( "_______________________classType: "+classType );
                 //process each instance
                 while (instances.hasNext()) {
                     

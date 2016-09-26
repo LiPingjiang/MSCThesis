@@ -184,6 +184,8 @@ public class SendProcessData
 		System.out.println("Input experiment ID:");
 		keyboard = new Scanner(System.in);
 		int[] nt={0, 20,  40,  60,  80,  100,  40,  60,  80,  100, 60,  90,  120, 150, 60,  60,  60,  60};
+		//int[] nt={0, 10,  10,  10,  10,  100,  40,  60,  80,  100, 60,  90,  120, 150, 60,  60,  60,  60};
+		
 		int[] ds={0, 400, 400, 400, 400, 400,  800, 533, 400, 320, 533, 355, 266, 213, 200, 400, 600, 800};
 		int task = keyboard.nextInt();
 		NumberOfThreads = nt[task];
@@ -301,11 +303,11 @@ public class SendProcessData
 		                    	}else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasID" ) ){
 		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasArea" ) ) {
-		                            //sendModel.add(sta);
+		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasLatitude" ) ){
-		                            //sendModel.add(sta);
+		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasLongitude" ) ){
-		                            //sendModel.add(sta);
+		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasVelocity" ) ){
 		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDirection" ) ){
@@ -315,9 +317,9 @@ public class SendProcessData
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDate" ) ){
 		                            sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDateTime" ) ){
-		                        	//sendModel.add(sta);
+		                        	sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasDistance" ) ){
-		                        	//sendModel.add(sta);
+		                        	sendModel.add(sta);
 		                        }else if( sta.getPredicate().getURI().equals( "http://localhost/SensorSchema/ontology#hasAcceleration" ) ){
 		                        	//sendModel.add(sta);
 		                        }else{
